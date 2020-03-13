@@ -2,6 +2,7 @@ import os
 import re
 from datetime import datetime, timezone
 import pytz
+import subprocess
 from loguru import logger
 from typing import List, Dict, Tuple
 import urllib.parse
@@ -30,7 +31,13 @@ class PageScanner():
     def fetch_from_sources(self) -> Dict[str, str]:
         " load the google sheet and parse out the individual state URLs"
 
+        host = os.environ.get("HOST")
+        if host == None: host = os.environ.get("COMPUTERNAME")
+
         change_list = ChangeList(self.cache_raw)        
+        
+        print(f"run started on {host} at {change_list.start_date.isoformat()}")
+        
         change_list.start_run()
         try:
             return self._main_loop(change_list)
@@ -40,7 +47,18 @@ class PageScanner():
         finally:
             change_list.finish_run()
 
-    
+            print(f"run finished on {host} at {change_list.start_date.isoformat()}")
+            self.save_to_github(f"{change_list.start_date.isoformat()} on {host}")
+
+
+    def save_to_github(self, commit_msg: str):
+        logger.info("commiting changes...")
+        subprocess.call(["git", "commit", "-a", "-m", commit_msg])
+        logger.info("pushing changes...")
+        subprocess.call(["git", "push"])
+        logger.info("done")
+
+
     def _main_loop(self, change_list: ChangeList) -> Dict[str, str]:
 
         def clean_url(s: str) -> str:
