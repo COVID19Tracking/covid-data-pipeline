@@ -48,16 +48,21 @@ class PageScanner():
             change_list.finish_run()
 
             print(f"run finished on {host} at {change_list.start_date.isoformat()}")
-            self.save_to_github(f"{change_list.start_date.isoformat()} on {host}")
+            self.save_to_data_github(f"{change_list.start_date.isoformat()} on {host}")
 
 
-    def save_to_github(self, commit_msg: str):
-        logger.info("commiting changes...")
-        subprocess.call(["git", "commit", "-a", "-m", commit_msg])
-        logger.info("pushing changes...")
-        subprocess.call(["git", "push"])
-        logger.info("done")
+    def save_to_data_github(self, commit_msg: str):
 
+        wd = os.getcwd()
+        os.chdir(self.base_dir)
+        try:
+            logger.info("commiting data changes...")        
+            subprocess.call(["git", "commit", "-a", "-m", commit_msg])
+            logger.info("pushing data changes...")
+            subprocess.call(["git", "push"])
+            logger.info("done")
+        finally:
+            os.chdir(wd)
 
     def _main_loop(self, change_list: ChangeList) -> Dict[str, str]:
 
