@@ -2,7 +2,6 @@ import os
 import re
 from datetime import datetime, timezone
 import pytz
-import subprocess
 from loguru import logger
 from typing import List, Dict, Tuple
 import urllib.parse
@@ -14,7 +13,7 @@ from sheet_parser import SheetParser
 
 from cov19_regularize import regularize
 
-from util import fetch, is_bad_content
+from util import fetch, is_bad_content, get_host, save_data_to_github
 
 class PageScanner():
 
@@ -31,11 +30,9 @@ class PageScanner():
     def fetch_from_sources(self) -> Dict[str, str]:
         " load the google sheet and parse out the individual state URLs"
 
-        host = os.environ.get("HOST")
-        if host == None: host = os.environ.get("COMPUTERNAME")
-
         change_list = ChangeList(self.cache_raw)        
         
+        host = get_host()
         print(f"run started on {host} at {change_list.start_date.isoformat()}")
         
         change_list.start_run()
@@ -47,22 +44,9 @@ class PageScanner():
         finally:
             change_list.finish_run()
 
-            print(f"run finished on {host} at {change_list.start_date.isoformat()}")
-            self.save_to_data_github(f"{change_list.start_date.isoformat()} on {host}")
+        print(f"run finished on {host} at {change_list.start_date.isoformat()}")
+        save_data_to_github(self.base_dir, f"{change_list.start_date.isoformat()} on {host}")
 
-
-    def save_to_data_github(self, commit_msg: str):
-
-        wd = os.getcwd()
-        os.chdir(self.base_dir)
-        try:
-            logger.info("commiting data changes...")        
-            subprocess.call(["git", "commit", "-a", "-m", commit_msg])
-            logger.info("pushing data changes...")
-            subprocess.call(["git", "push"])
-            logger.info("done")
-        finally:
-            os.chdir(wd)
 
     def _main_loop(self, change_list: ChangeList) -> Dict[str, str]:
 

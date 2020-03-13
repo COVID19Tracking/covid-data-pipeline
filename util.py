@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import pytz
 from loguru import logger
 import re
+import subprocess
 
 from requests.packages import urllib3
 urllib3.disable_warnings() 
@@ -49,3 +50,34 @@ def format_mins(x : float):
 def format_datetime_for_file(dt: datetime):
     #return dt.isoformat().replace(":", "_x_").replace("+", "_p_")
     return dt.strftime('%Y%m%d-%H%M%S')
+
+def get_host():
+    host = os.environ.get("HOST")
+    if host == None: host = os.environ.get("COMPUTERNAME")
+    return host
+
+def is_code_dir(xdir: str) -> bool:
+
+    python_test_dir = os.path.join(xdir, "__pycache__")
+    if os.path.exists(python_test_dir): return True
+
+    return False
+
+def save_data_to_github(git_dir: str, commit_msg: str):
+
+    if is_code_dir(git_dir):
+        raise Exception(f"{git_dir} because it looks like a code directory")
+
+    wd = os.getcwd()
+    os.chdir(git_dir)
+    try:
+        logger.info("adding data changes...")
+        subprocess.call(["git", "add", "."])
+        logger.info("commiting data changes...")
+        subprocess.call(["git", "commit", "-a", "-m", commit_msg])
+        logger.info("pushing data changes...")
+        subprocess.call(["git", "push"])
+        logger.info("done")
+    finally:
+        os.chdir(wd)
+

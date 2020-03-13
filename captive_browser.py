@@ -14,8 +14,8 @@ import numpy as np
 import imageio
 import time
 
-from util import format_datetime_for_file
 from directory_cache import DirectoryCache
+from util import format_datetime_for_file, get_host, save_data_to_github
 
 class CaptiveBrowser:
 
@@ -63,11 +63,26 @@ class SpecializedCapture():
         self.temp_dir = temp_dir
         self.publish_dir = publish_dir
 
+        self.cache_images = DirectoryCache(os.path.join(publish_dir, "images"))
+        self.cache = DirectoryCache(os.path.join(publish_dir))
+
+        self.changed = False
+
         logger.info("  [start captive browser]")
         self.browser = CaptiveBrowser()
 
     def close(self):
         self.browser.close()
+
+    def publish(self):
+        if not self.changed: 
+            logger.info("  [nothing changed]")
+        else:
+            host = get_host()
+            dt = datetime.now(timezone.utc)
+            msg = f"{dt.isoformat()} on {host} - Specialized Capture"
+
+            save_data_to_github(self.publish_dir, msg)
 
     def are_images_the_same(self, path1: str, path2: str, out_path: str) -> bool:
 
@@ -100,10 +115,10 @@ class SpecializedCapture():
         logger.info(f"    1. get content from {url}")
         self.browser.get(url)
         
-        logger.info("     2. sleep for 5 seconds")
+        logger.info("    2. sleep for 5 seconds")
         time.sleep(5)
 
-        logger.info("     3. save screenshot")
+        logger.info("    3. save screenshot")
         self.browser.save_screenshot(xpath_temp)
     
         if os.path.exists(xpath):
@@ -121,32 +136,31 @@ class SpecializedCapture():
 
         dt = datetime.now(timezone.utc)
         timestamp = format_datetime_for_file(dt)
-        key = "az_tableau_" + timestamp + ".png"
+        key_image = "az_tableau_" + timestamp + ".png"
 
-        logger.info(f"    4. publish unique image {key}")
-        cache = DirectoryCache(os.path.join(publish_dir, "images"))
-        xkey = cache.import_file(key, xpath)
+        logger.info(f"    4. publish unique image {key_image}")
+        xkey_image = self.cache_images.import_file(key_image, xpath)
 
-        xpath_unique = os.path.join(temp_dir, "images", xkey)
+        # also make a copy in the temp dir so we can preview HTML
+        xpath_unique = os.path.join(temp_dir, "images", xkey_image)
         shutil.copyfile(xpath, xpath_unique)
 
         logger.info("    5. publish HTML snippet")
-        cache = DirectoryCache(os.path.join(publish_dir))
         xpath_html = os.path.join(temp_dir, f"{key}.html")
         with open(xpath_html, "w") as f:
             f.write(f"""
     <html>
     <body>
-            <h3>{label}/h3>
+            <h3>{label}</h3>
             <div>captured: {dt.isoformat()}</div>
             <div>src: <a href='{url}'>{url}</a></div>
             <br />
-            <img src='images/{xkey}'>
+            <img src='images/{xkey_image}'>
     </body>
     </html>
     """)
-        cache.import_file(f"{key}.html", xpath)
-
+        self.cache.import_file(f"{key}.html", xpath_html)
+        self.changed = True
 
 if __name__ == "__main__":
     temp_dir = "c:\\temp\\public-cache"
@@ -157,4 +171,5 @@ if __name__ == "__main__":
         "https://tableau.azdhs.gov/views/COVID-19Table/COVID-19table?:embed=y&:showVizHome=no&:host_url=https%3A%2F%2Ftableau.azdhs.gov%2F&:embed_code_version=3&:tabs=no&:toolbar=no&:showAppBanner=false&:display_spinner=no&iframeSizedToWindow=true&:loadOrderID=0"
     )
     capture.close()
+    #capture.publish()
 
