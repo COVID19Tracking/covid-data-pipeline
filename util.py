@@ -46,3 +46,6 @@ def format_mins(x : float):
         return f"{x:.1f} hours"
     return f"{x:.1f} days"
 
+def format_datetime_for_file(dt: datetime):
+    #return dt.isoformat().replace(":", "_x_").replace("+", "_p_")
+    return dt.strftime('%Y%m%d-%H%M%S')

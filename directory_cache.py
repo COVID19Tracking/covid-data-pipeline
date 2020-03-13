@@ -101,21 +101,41 @@ class DirectoryCache:
         finally:
             r.close()
 
-    def copy_to(self, key: str, dest):
+    def import_file(self, key: str, src) -> str:
 
-        if type(dest) is str:
-            xto_dir = dest
-        elif type(dest) == type(self):
-            xto_dir =  dest.work_dir
+        xkey = self.encode_key(key)
+        xto_path = os.path.join(self.work_dir, xkey)
+        
+        if type(src) is str:
+            xfrom_path = src
+        elif type(src) == type(self):
+            xfrom_path = os.path.join(src.work_dir, key)
         else:
             raise Exception("Destination must be str or DirectoryCache")
 
-        xfrom = os.path.join(self.work_dir, key)
-        xto = os.path.join(xto_dir, key)
+        if os.path.exists(xto_path): 
+            if os.path.samefile(xfrom_path, xto_path): return
+            os.remove(xto_path)
+        if os.path.exists(xfrom_path): shutil.copy(xfrom_path, xto_path)
+        return xkey
 
-        if os.path.exists(xto): os.remove(xto)
-        if os.path.exists(xfrom): shutil.copy(xfrom, xto)
-            
+    def export_file(self, key: str, dest, new_key: str= None):
+
+        xfrom_path = os.path.join(self.work_dir, self.encode_key(key))
+        
+        if type(dest) is str:
+            xto_path = os.path.join(dest, new_key) if new_key != None else dest
+            if os.path.exists(xto_path): 
+                if os.path.samefile(xfrom_path, xto_path): return
+                os.remove(xto_path)
+            if os.path.exists(xfrom_path): shutil.copy(xfrom_path, xto_path)
+        elif type(dest) == type(self):             
+            new_key = key if new_key == None else key
+            dest.import_file(key, xfrom_path)
+        else:
+            raise Exception("Destination must be str or DirectoryCache")
+        return self.encode_key(new_key)
+
 
     def save(self, content: bytes, key: str):
 
