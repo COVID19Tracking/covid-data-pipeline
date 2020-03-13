@@ -7,8 +7,8 @@ import re
 from lxml import html, etree
 from unidecode import unidecode
 
-from cache import PageCache
-from regularize import regularize
+from directory_cache import DirectoryCache
+from cov19_regularize import regularize
 
 def remove_identical_nodes(elem1: html.Element, elem2: html.Element) -> bool:
     
@@ -33,31 +33,30 @@ def remove_identical_nodes(elem1: html.Element, elem2: html.Element) -> bool:
 
 class PageCompare():
 
-    def __init__(self, work_dir: str):
-        self.cache = PageCache(work_dir) 
+    def __init__(self, work_dir_a: str, work_dir_b: str, out_dir: str):
+        self.cache_a = DirectoryCache(work_dir_a) 
+        self.cache_b = DirectoryCache(work_dir_b) 
+        self.out_dir = out_dir
 
     def process_all(self):
 
         ignore_list = ["main_sheet", "WV"]
 
-        html_out_dir = os.path.join(self.cache.work_dir, "compare")
-        if not os.path.exists(html_out_dir): os.makedirs(html_out_dir)
+        if not os.path.exists(self.out_dir): os.makedirs(self.out_dir)
 
-
-        for fn in self.cache.list_html_files():
+        for fn in self.cache_a.list_html_files():
             x = fn.replace(".html", "")
             if x in ignore_list: continue
 
-
-            content_a = self.cache.load(fn, "A")
-            content_b = self.cache.load(fn, "B")
+            content_a = self.cache_a.load(fn)
+            content_b = self.cache_b.load(fn)
             if content_a == content_b:
                 logger.info(f"=================| {fn}")
                 logger.info("   data is SAME")
                 continue
 
-            fn_a = os.path.join(html_out_dir, f"{x}_A.html")
-            fn_b = os.path.join(html_out_dir, f"{x}_B.html")
+            fn_a = os.path.join(self.out_dir, f"{x}_A.html")
+            fn_b = os.path.join(self.out_dir, f"{x}_B.html")
             if os.path.exists(fn_a): os.remove(fn_a)
             if os.path.exists(fn_b): os.remove(fn_b)
 
@@ -87,7 +86,11 @@ class PageCompare():
 # --------------------
 def main():
 
-    comparer = PageCompare("c:\\Exemplar\\Corona19\\2020-03-08")
+    cache_a_dir = "c:\\Exemplar\\Corona19\\2020-03-08\\A"
+    cache_b_dir = "c:\\Exemplar\\Corona19\\2020-03-08\\B"
+    out_dir = "c:\\Exemplar\\Corona19\\2020-03-08\\B"
+
+    comparer = PageCompare(cache_a_dir, cache_b_dir, out_dir)
     comparer.process_all()
 
 if __name__ == "__main__":

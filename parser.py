@@ -1,5 +1,4 @@
 import os
-from cache import PageCache
 from loguru import logger
 from typing import List
 from lxml import html, etree
@@ -7,13 +6,14 @@ from unidecode import unidecode
 import re
 from copy import deepcopy
 
+from directory_cache import DirectoryCache
 from content_table import ContentTable
 from change_list import ChangeList
 
 class PageParser():
 
     def __init__(self, work_dir: str):
-        self.cache = PageCache(work_dir) 
+        self.cache = DirectoryCache(work_dir) 
 
     def strip_attributes(self, x: html.Element):
         x.attrib.clear()
@@ -138,7 +138,7 @@ class PageParser():
             if x in ignore_list: continue
 
             logger.info(f"=================| {fn}")
-            content = self.cache.load(fn, None)
+            content = self.cache.load(fn)
 
             tree = html.fromstring(content)
             tables = tree.xpath('//table')

@@ -1,6 +1,6 @@
 
 import re
-from cache import PageCache
+from directory_cache import DirectoryCache
 
 def clean_content(content: bytes) -> bytes:
 
@@ -33,7 +33,7 @@ def clean_content(content: bytes) -> bytes:
 
 class HTMLCompare:
 
-    def __init__(self, cache: PageCache):
+    def __init__(self, cache: DirectoryCache):
         self.cache = cache
         self.content_a = b''
         self.content_b = b''

@@ -13,14 +13,6 @@ from typing import Union, List, Tuple, Dict
 from requests.packages import urllib3
 urllib3.disable_warnings() 
 
-def encode_key(key: str) -> str:
-    """ convert to a file-stystem safe representation of a URL """
-
-    result = re.sub("https?:.+/", "", key)
-    result = re.sub("[/?=&]", "_", result)
-    result = result.replace(".aspx", ".html")
-    return result
-
 def file_age(xpath: str) -> float:
     """ get age of a file in minutes """
 
@@ -31,14 +23,19 @@ def file_age(xpath: str) -> float:
     xnow = datetime.now()
     xdelta = (xnow - mtime).seconds / 60.0
 
-    # print(f" time = {mtime}")
-    # print(f" now = {xnow}")
-    # print(f" delta = {xdelta}")
-
     return xdelta
 
+def format_mins(x : float):
+    if x < 60.0:
+        return f"{x:.0f} mins"
+    x /= 60.0
+    if x < 24.0:
+        return f"{x:.1f} hours"
+    return f"{x:.1f} days"
 
-class PageCache:
+
+
+class DirectoryCache:
     """  a simple disk-based page cache """
 
     def __init__(self, work_dir: str):
@@ -46,6 +43,14 @@ class PageCache:
 
         if not os.path.isdir(self.work_dir):
             os.makedirs(self.work_dir)
+
+    def encode_key(self, key: str) -> str:
+        """ convert to a file-stystem safe representation of a URL """
+
+        result = re.sub("https?:.+/", "", key)
+        result = re.sub("[/?=&]", "_", result)
+        result = result.replace(".aspx", ".html")
+        return result
 
     def read_old_date(self) -> str:
         xpath = os.path.join(self.work_dir, "time_stamp.txt")
@@ -82,7 +87,7 @@ class PageCache:
             return None, 999
 
     def get_cache_age(self, key: str) -> float:
-        file_name = encode_key(key)
+        file_name = self.encode_key(key)
         xpath = os.path.join(self.work_dir, file_name)
         if not os.path.isfile(xpath): return 10000
 
@@ -90,7 +95,7 @@ class PageCache:
         return xdelta
 
     def read_date_time_str(self, key: str) -> float:
-        file_name = encode_key(key)
+        file_name = self.encode_key(key)
         xpath = os.path.join(self.work_dir, file_name)
         if not os.path.isfile(xpath): return "Missing"
 
@@ -98,24 +103,13 @@ class PageCache:
         mtime = datetime.fromtimestamp(mtime)
         dt = mtime
 
-        def format_mins(x : float):
-            if x < 60.0:
-                return f"{x:.0f} mins"
-            x /= 60.0
-            if x < 24.0:
-                return f"{x:.1f} hours"
-            return f"{x:.1f} days"
-
         xdelta = file_age(xpath)
         return f"changed at {dt} ({dt.tzname()}): {format_mins(xdelta)} ago" 
 
 
-    def does_version_exists(self, key: str, version: str) -> bool:
-        file_name = encode_key(key)
-        if version == None:
-            xpath = os.path.join(self.work_dir, file_name)
-        else:
-            xpath = os.path.join(self.work_dir, version, file_name)
+    def exists(self, key: str) -> bool:
+        file_name = self.encode_key(key)
+        xpath = os.path.join(self.work_dir, file_name)
         return os.path.exists(xpath)
 
     def list_html_files(self) -> List[str]:
@@ -127,17 +121,11 @@ class PageCache:
         return result
 
 
-    def load(self, key: str, version: str) -> Union[bytes, None]:
+    def load(self, key: str) -> Union[bytes, None]:
 
-        file_name = encode_key(key)
+        file_name = self.encode_key(key)
 
-        if version != None:
-            xdir = os.path.join(self.work_dir, version)
-            if not os.path.exists(xdir): os.makedirs(xdir)            
-        else:
-            xdir = self.work_dir
-
-        xpath = os.path.join(xdir, file_name)
+        xpath = os.path.join(self.work_dir, file_name)
         if not os.path.isfile(xpath): return None
 
         r = open(xpath, "rb")
@@ -147,42 +135,33 @@ class PageCache:
         finally:
             r.close()
 
-    def copy_to_version(self, key: str, version: str):
+    def copy_to(self, key: str, dest):
 
-        if version == None:
-            raise Exception("Missing version")
-
-        xdir = os.path.join(self.work_dir, version)
-        if not os.path.exists(xdir): os.makedirs(xdir)            
+        if type(dest) is str:
+            xto_dir = dest
+        elif type(dest) == type(self):
+            xto_dir =  dest.work_dir
+        else:
+            raise Exception("Destination must be str or DirectoryCache")
 
         xfrom = os.path.join(self.work_dir, key)
-        xto = os.path.join(self.work_dir, version, key)
+        xto = os.path.join(xto_dir, key)
 
         if os.path.exists(xto): os.remove(xto)
         if os.path.exists(xfrom): shutil.copy(xfrom, xto)
             
 
-
-    def save(self, content: bytes, key: str, version: str):
+    def save(self, content: bytes, key: str):
 
         if content == None: return
         if not isinstance(content, bytes):
             raise TypeError("content must be type 'bytes'")
 
-        if version != None:
-            xdir = os.path.join(self.work_dir, version)
-            if not os.path.exists(xdir): os.makedirs(xdir)            
-        else:
-            xdir = self.work_dir
+        file_name = self.encode_key(key)
+        xpath = os.path.join(self.work_dir, file_name)
 
-        file_name = encode_key(key)
-        xpath = os.path.join(xdir, file_name)
-
-        w = open(xpath, "wb")
-        try:
+        with open(xpath, "wb") as w:
             w.write(content)
-        finally:
-            w.close()
 
     def cleanup(self, max_age_mins: int):
         for fn in os.listdir(self.work_dir):

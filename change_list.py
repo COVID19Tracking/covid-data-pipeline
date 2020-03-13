@@ -3,12 +3,12 @@ import json
 from loguru import logger
 from typing import Dict
 
-from cache import PageCache
+from directory_cache import DirectoryCache
 
 class ChangeList:
     """ maintains a list of changes for a run """
 
-    def __init__(self, cache: PageCache):
+    def __init__(self, cache: DirectoryCache):
         self.cache = cache
         new_date, old_date = self.cache.update_dates()
         self.new_date = new_date
