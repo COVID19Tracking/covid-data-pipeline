@@ -27,6 +27,7 @@ class CaptiveBrowser:
         options.add_argument('--headless')
         self.driver = webdriver.Firefox(options=options)
 
+        self.driver.set_window_size(1366, 2400)
         #options = webdriver.ChromeOptions()
         #options.add_argument('headless')
         #self.driver = webdriver.Chrome(options=options)
@@ -88,6 +89,9 @@ class SpecializedCapture():
 
         buffer1 = imageio.imread(path1, as_gray=True)
         buffer2 = imageio.imread(path2, as_gray=True)
+
+        if buffer1.shape != buffer2.shape:
+            return False
 
         diff = buffer1 - buffer2
         xmin, xmax = diff.min(), diff.max()
@@ -167,8 +171,8 @@ if __name__ == "__main__":
     publish_dir = "C:\\data\\corona19-data-archive\\captive-browser"
 
     capture = SpecializedCapture(temp_dir, publish_dir)
-    capture.screenshot("az_tableau", "Arizona Tableau Page",
-        "https://tableau.azdhs.gov/views/COVID-19Table/COVID-19table?:embed=y&:showVizHome=no&:host_url=https%3A%2F%2Ftableau.azdhs.gov%2F&:embed_code_version=3&:tabs=no&:toolbar=no&:showAppBanner=false&:display_spinner=no&iframeSizedToWindow=true&:loadOrderID=0"
+    capture.screenshot("az_tableau", "Arizona Main Page",
+        "https://www.azdhs.gov/preparedness/epidemiology-disease-control/infectious-disease-epidemiology/index.php#novel-coronavirus-home"
     )
     capture.close()
     capture.publish()
