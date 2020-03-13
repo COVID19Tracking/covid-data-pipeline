@@ -171,5 +171,5 @@ if __name__ == "__main__":
         "https://tableau.azdhs.gov/views/COVID-19Table/COVID-19table?:embed=y&:showVizHome=no&:host_url=https%3A%2F%2Ftableau.azdhs.gov%2F&:embed_code_version=3&:tabs=no&:toolbar=no&:showAppBanner=false&:display_spinner=no&iframeSizedToWindow=true&:loadOrderID=0"
     )
     capture.close()
-    #capture.publish()
+    capture.publish()
 
