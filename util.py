@@ -74,7 +74,7 @@ def save_data_to_github(git_dir: str, commit_msg: str):
         logger.info("adding data changes...")
         subprocess.call(["git", "add", "."])
         logger.info("commiting data changes...")
-        subprocess.call(["git", "commit", "-a", "-m", commit_msg])
+        subprocess.call(["git", "commit", "-m", commit_msg])
         logger.info("pushing data changes...")
         subprocess.call(["git", "push"])
         logger.info("done")

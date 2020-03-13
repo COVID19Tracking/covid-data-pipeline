@@ -187,5 +187,5 @@ if __name__ == "__main__":
         "https://health.wyo.gov/publichealth/infectious-disease-epidemiology-unit/disease/novel-coronavirus/"
     )
     capture.close()
-    #capture.publish()
+    capture.publish()
 

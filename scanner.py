@@ -44,8 +44,8 @@ class PageScanner():
         finally:
             change_list.finish_run()
 
-        print(f"run finished on {host} at {change_list.start_date.isoformat()}")
-        save_data_to_github(self.base_dir, f"{change_list.start_date.isoformat()} on {host}")
+            print(f"run finished on {host} at {change_list.start_date.isoformat()}")
+            save_data_to_github(self.base_dir, f"{change_list.start_date.isoformat()} on {host}")
 
 
     def _main_loop(self, change_list: ChangeList) -> Dict[str, str]:
