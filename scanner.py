@@ -66,7 +66,7 @@ class PageScanner():
             if self.trace: logger.info(f"  checked {key} {mins:.1f} minutes ago")
             if mins < 5: 
                 logger.info(f"{key}: skip b/c checked < 5 mins")
-                change_list.record_skip(key, xurl, "age < 5 mins")
+                change_list.temporary_skip(key, xurl, "age < 5 mins")
                 return False
 
             if skip:

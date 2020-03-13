@@ -127,6 +127,17 @@ class ChangeList:
 
         self.update_status(name, status, xurl, msg)
 
+    def temporary_skip(self, name: str, xurl: str, msg: str = ""):
+        " make as complete but don't change state "
+        status = "skip"
+        logger.info(f"  {name}: {status} {msg}")
+
+        y, x, _ = self.update_status(name, status, xurl, msg)
+        if x != None:
+            y["status"] = x["status"]
+            y["msg"] = x["msg"]
+
+
     def record_changed(self, name: str, xurl: str, msg: str = ""):
 
         status = "CHANGED"
