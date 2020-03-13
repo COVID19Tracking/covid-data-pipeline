@@ -2,7 +2,6 @@ import os
 import shutil
 import re
 import datetime
-import requests
 
 from datetime import datetime, timezone
 from loguru import logger
@@ -10,30 +9,7 @@ import pytz
 
 from typing import Union, List, Tuple, Dict
 
-from requests.packages import urllib3
-urllib3.disable_warnings() 
-
-def file_age(xpath: str) -> float:
-    """ get age of a file in minutes """
-
-    #print(xpath)
-    mtime = os.path.getmtime(xpath)
-    mtime = datetime.fromtimestamp(mtime)
-
-    xnow = datetime.now()
-    xdelta = (xnow - mtime).seconds / 60.0
-
-    return xdelta
-
-def format_mins(x : float):
-    if x < 60.0:
-        return f"{x:.0f} mins"
-    x /= 60.0
-    if x < 24.0:
-        return f"{x:.1f} hours"
-    return f"{x:.1f} days"
-
-
+from util import file_age, format_mins
 
 class DirectoryCache:
     """  a simple disk-based page cache """
@@ -75,17 +51,7 @@ class DirectoryCache:
         with open(xpath, "w") as f:
             f.write(f"{new_date}\n")
         return new_date, old_date
-
     
-    def fetch(self, page: str) -> [bytes, int]:
-        #print(f"fetch {page}")
-        try:
-            resp = requests.get(page, verify=False)
-            return resp.content, resp.status_code
-        except Exception as ex:
-            logger.error(f"Exception: {ex}")
-            return None, 999
-
     def get_cache_age(self, key: str) -> float:
         file_name = self.encode_key(key)
         xpath = os.path.join(self.work_dir, file_name)
