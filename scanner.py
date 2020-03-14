@@ -10,10 +10,11 @@ from directory_cache import DirectoryCache
 from change_list import ChangeList
 from html_compare import HTMLCompare
 from sheet_parser import SheetParser
+from url_manager import UrlManager
 
 from cov19_regularize import regularize
 
-from util import fetch, is_bad_content, get_host, save_data_to_github
+from util import is_bad_content, get_host, save_data_to_github
 
 class PageScanner():
 
@@ -24,6 +25,8 @@ class PageScanner():
         self.cache_raw = DirectoryCache(os.path.join(base_dir, "raw")) 
         self.cache_cleaned = DirectoryCache(os.path.join(base_dir, "cleaned")) 
         self.cache_diff = DirectoryCache(os.path.join(base_dir, "diff")) 
+
+        self.url_manager = UrlManager()
 
         self.trace = False
 
@@ -44,8 +47,9 @@ class PageScanner():
         finally:
             change_list.finish_run()
 
-            print(f"run finished on {host} at {change_list.start_date.isoformat()}")
-            save_data_to_github(self.base_dir, f"{change_list.start_date.isoformat()} on {host}")
+            logger.info(f"  [in-memory content cache took {self.}")
+            #print(f"run finished on {host} at {change_list.start_date.isoformat()}")
+            #save_data_to_github(self.base_dir, f"{change_list.start_date.isoformat()} on {host}")
 
 
     def _main_loop(self, change_list: ChangeList) -> Dict[str, str]:
@@ -83,7 +87,7 @@ class PageScanner():
             local_content =  self.cache_raw.load(key)
 
             if self.trace: logger.info(f"fetch {xurl}")
-            remote_content, status = fetch(xurl)
+            remote_content, status = self.url_manager.fetch(xurl)
             is_bad, msg = is_bad_content(remote_content)
             if is_bad:
                 change_list.record_failed(key, xurl, msg)
