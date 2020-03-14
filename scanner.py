@@ -1,7 +1,19 @@
+"""
+scanner
+
+scan the COVID-19 government sites
+data is fetched and cleaned then pushed to a git repo
+files are only updated if the cleaned version changes
+"""
+
+from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
 import os
 import sys
 import re
+import requests
+import io
 from datetime import datetime, timezone
+import pandas as pd
 import pytz
 from loguru import logger
 from typing import List, Dict, Tuple
@@ -13,49 +25,40 @@ from html_compare import HTMLCompare
 from sheet_parser import SheetParser
 from url_manager import UrlManager
 
-#from cov19_regularize import regularize
 from html_cleaner import HtmlCleaner
+from captive_browser import SpecializedCapture
 
 from util import is_bad_content, get_host, save_data_to_github
 
-class ScannerOptions():
 
-    def __init__(self):
+parser = ArgumentParser(
+    description=__doc__,
+    formatter_class=RawDescriptionHelpFormatter)
 
-        self.clean = False
-        self.auto_push = False
-        self.trace = False
-        self.show_help = False
+parser.add_argument(
+    '-c', '--clean', dest='clean', action='store_true', default=False,
+    help='run the cleaner on everything')
+parser.add_argument('--trace', dest='trace', action='store_true', default=False,
+    help='turn on tracing')
+parser.add_argument('-a', '--auto_push', dest='auto_push', action='store_true', default=False,
+    help='checkin to the git repo at end of run')
 
-    def parse_args(self):
-        for x in sys.argv[1:]:
-            if x in ["-c", "--clean"]:
-                self.clean = True
-            elif x in ["--trace"]:
-                self.trace = True
-            elif x in ["-a", "--auto-push"]:
-                self.auto_push = True
-            elif x in ("-h", "--help"):
-                self.show_help = True
-            else:
-                logger.error(f"unexpected option {x}")
+# data dir args
 
-    def get_help_text(self) -> str:
-        return """
-scanner: scan the COVID-19 government sites
-    data is fetched and cleaned then pushed to a git repo
-    files are only updated if the cleaned version changes
+parser.add_argument(
+    '--base_dir',
+    default='C:\\data\\corona19-data-archive',
+    help='Local GitHub repo dir for corona19-data-archive')
 
-    -c, --clean:  run the cleaner on everything
-    -a, --auto-push: checkin to the git repo at end of run
-    --trace:  turn on tracing
-"""
+parser.add_argument(
+    '--temp_dir',
+    default='"c:\\temp\\public-cache"',
+    help='Local temp dir for snapshots')
 
-# -----
 
 class PageScanner():
 
-    def __init__(self, base_dir:str, main_sheet_url: str, options: ScannerOptions = None):
+    def __init__(self, base_dir:str, main_sheet_url:str, args:Namespace):
         self.main_sheet_url = main_sheet_url
         
         self.base_dir = base_dir
@@ -67,8 +70,11 @@ class PageScanner():
 
         self.html_cleaner = HtmlCleaner()
 
-        if options == None: options = ScannerOptions()
-        self.options = options
+        self.options = args
+
+        publish_dir = os.path.join(self.options.base_dir, 'captive-browser')
+        self.capture = SpecializedCapture(
+            self.options.temp_dir, publish_dir)
 
     def fetch_from_sources(self) -> Dict[str, str]:
         " load the google sheet and parse out the individual state URLs"
@@ -86,6 +92,10 @@ class PageScanner():
             change_list.abort_run(ex)
         finally:
             change_list.finish_run()
+
+            self.capture.close()
+            if self.options.auto_push:
+                self.capture.publish()
 
             logger.info(f"  [in-memory content cache took {self.url_manager.size}")
             logger.info(f"run finished on {host} at {change_list.start_date.isoformat()}")
@@ -159,28 +169,25 @@ class PageScanner():
                 self.cache_raw.save(remote_raw_content, key)
                 self.cache_clean.save(remote_clean_content, key)
                 change_list.record_changed(key, xurl)
+                self.capture.screenshot(state, state, xurl)
             else:
                 change_list.record_unchanged(key, xurl)
                 return False
 
         self.clean_html()
 
-        # -- get google worksheet
-        logger.info("fetch main page...")
-        
-        fetch_if_changed("main_sheet", self.main_sheet_url)
-        content = self.cache_raw.load("main_sheet.html") 
+        # -- get states info from API
 
-        parser = SheetParser()
-        df_config = parser.get_config(content)
+        states_info = requests.get('https://covid.cape.io/states/info.csv').content
+        df_config = pd.read_csv(io.StringIO(states_info.decode('utf-8')))
 
-        # -- fetch pages found in worksheet
+        # -- fetch state pages
         skip = False
 
         for idx, r in df_config.iterrows():
-            state = r["State"]
-            general_url = clean_url(r["COVID-19 site"])
-            data_url = clean_url(r["Data site"])
+            state = r["state"]
+            general_url = clean_url(r["covid19Site"])
+            data_url = clean_url(r["dataSite"])
 
             if general_url == None:
                 logger.warning(f"  no main url for {state}")
@@ -194,20 +201,15 @@ class PageScanner():
 
 
 
-def main():
+def main(args_list=None):
+    if args_list is None:
+        args_list = sys.argv[1:]
+    args = parser.parse_args(args_list)
 
-    options = ScannerOptions()    
-    options.parse_args()
-
-    if options.show_help:
-        print(options.get_help_text())
-        exit(-1)
-
-    base_dir = "C:\\data\\corona19-data-archive"
     main_sheet = "https://docs.google.com/spreadsheets/d/18oVRrHj3c183mHmq3m89_163yuYltLNlOmPerQ18E8w/htmlview?sle=true#"
-    scanner = PageScanner(base_dir, main_sheet, options=options)
+    scanner = PageScanner(args.base_dir, main_sheet, args=args)
     
-    if options.clean:
+    if args.clean:
         scanner.clean_html()
     else:
         scanner.fetch_from_sources()
