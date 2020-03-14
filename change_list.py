@@ -159,6 +159,7 @@ class ChangeList:
         
         changed = []
         unchanged = []
+        errors = []
         skipped = []
         for x in self._items:
             name = x["name"]
@@ -168,6 +169,8 @@ class ChangeList:
                 skipped.append(x)
             elif status == "unchanged":
                 unchanged.append(x)
+            elif status == "error":
+                errors.append(x)
             else:
                 changed.append(x)
 
@@ -182,6 +185,7 @@ class ChangeList:
             f_changes.write(f"  changed\t{len(changed)}\n")
             f_changes.write(f"  unchanged\t{len(unchanged)}\n")
             f_changes.write(f"  skipped\t{len(skipped)}\n")
+            f_changes.write(f"  errors\t{len(errors)}\n")
             f_changes.write(f"\n")
 
             f_changes.write("====== ITEMS THAT HAVE CHANGED ======\n")
@@ -189,16 +193,24 @@ class ChangeList:
                 name, status, xurl, msg = x["name"], x["status"], x["url"], x["msg"]
                 if msg == None: msg = ""            
                 f_changes.write(f"{name}\t{status}\t{xurl}\t{msg}\n")
-            f_changes.write(f"\n\n")
+            f_changes.write(f"\n")
 
             f_changes.write("====== ITEMS HAVE NOT CHANGED ======\n")
             for x in unchanged:
                 name, status, xurl, msg = x["name"], x["status"], x["url"], x["msg"]
                 if msg == None: msg = ""            
                 f_changes.write(f"{name}\t{status}\t{xurl}\t{msg}\n")
+            f_changes.write(f"\n")
 
             f_changes.write("====== ITEMS WHERE SKIPPED ======\n")
             for x in skipped:
+                name, status, xurl, msg = x["name"], x["status"], x["url"], x["msg"]
+                if msg == None: msg = ""            
+                f_changes.write(f"{name}\t{status}\t{xurl}\t{msg}\n")
+            f_changes.write(f"\n")
+
+            f_changes.write("====== ITEMS WITH ERROR ======\n")
+            for x in errors:
                 name, status, xurl, msg = x["name"], x["status"], x["url"], x["msg"]
                 if msg == None: msg = ""            
                 f_changes.write(f"{name}\t{status}\t{xurl}\t{msg}\n")
