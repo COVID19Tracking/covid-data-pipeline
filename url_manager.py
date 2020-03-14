@@ -21,6 +21,7 @@ class UrlManager:
 
         content, status = fetch(url)
         self.history[url] = (content, status)
-        self.size += len(content)
+        if content != None:
+            self.size += len(content)
         return content, status
 

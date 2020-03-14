@@ -13,4 +13,24 @@ def test_guid():
     s_out = cleaner.Clean(s_in)
 
 
-test_guid()
+def test_twitter():
+
+    cleaner = HtmlCleaner(trace=True)
+    s_in = '''
+<span>
+    <span>
+        <a href="http://twitter.com/IDPH">@IDPH</a>
+        <a href="https://twitter.com//search?q=%23COVID19">#COVID19</a>
+        <a href="https://t.co/eL6ZH7xQaN">https://t.co/eL6ZH7xQaN</a>
+    </span>
+</span>
+<span>
+    <span>- <em>12 hours 23 min</em> ago</span>
+</span>
+'''
+
+    s_out = cleaner.Clean(s_in)
+
+
+#test_guid()
+test_twitter()

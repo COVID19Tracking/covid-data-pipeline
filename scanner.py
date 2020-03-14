@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 from datetime import datetime, timezone
 import pytz
@@ -17,10 +18,44 @@ from html_cleaner import HtmlCleaner
 
 from util import is_bad_content, get_host, save_data_to_github
 
+class ScannerOptions():
+
+    def __init__(self):
+
+        self.clean = False
+        self.auto_push = False
+        self.trace = False
+        self.show_help = False
+
+    def parse_args(self):
+        for x in sys.argv[1:]:
+            if x in ["-c", "--clean"]:
+                self.clean = True
+            elif x in ["--trace"]:
+                self.trace = True
+            elif x in ["-a", "--auto-push"]:
+                self.auto_push = True
+            elif x in ("-h", "--help"):
+                self.show_help = True
+            else:
+                logger.error(f"unexpected option {x}")
+
+    def get_help_text(self) -> str:
+        return """
+scanner: scan the COVID-19 government sites
+    data is fetched and cleaned then pushed to a git repo
+    files are only updated if the cleaned version changes
+
+    -c, --clean:  run the cleaner on everything
+    -a, --auto-push: checkin to the git repo at end of run
+    --trace:  turn on tracing
+"""
+
+# -----
+
 class PageScanner():
 
-    def __init__(self, base_dir:str, main_sheet_url: str,
-            rerun_clean = False, auto_push = False, trace = False):
+    def __init__(self, base_dir:str, main_sheet_url: str, options: ScannerOptions = None):
         self.main_sheet_url = main_sheet_url
         
         self.base_dir = base_dir
@@ -32,9 +67,8 @@ class PageScanner():
 
         self.html_cleaner = HtmlCleaner()
 
-        self.auto_push = auto_push
-        self.rerun_clean = rerun_clean
-        self.trace = trace
+        if options == None: options = ScannerOptions()
+        self.options = options
 
     def fetch_from_sources(self) -> Dict[str, str]:
         " load the google sheet and parse out the individual state URLs"
@@ -54,18 +88,18 @@ class PageScanner():
             change_list.finish_run()
 
             logger.info(f"  [in-memory content cache took {self.url_manager.size}")
-            print(f"run finished on {host} at {change_list.start_date.isoformat()}")
+            logger.info(f"run finished on {host} at {change_list.start_date.isoformat()}")
             
-            if self.auto_push:
+            if self.options.auto_push:
                 save_data_to_github(self.base_dir, f"{change_list.start_date.isoformat()} on {host}")
             else:
-                print("github push is DISABLED")
+                logger.warning("github push is DISABLED")
 
     def clean_html(self):
         # -- rebuild clean files (if necessary)
         is_first = False
         for key in self.cache_raw.list_html_files():
-            if self.rerun_clean or not self.cache_clean.exists(key):
+            if self.options.clean or not self.cache_clean.exists(key):
                 if is_first:
                     logger.info(f"clean existing files...")
                     is_first = False
@@ -97,7 +131,7 @@ class PageScanner():
                 return
 
             mins = change_list.get_minutes_since_last_check(key)
-            if self.trace: logger.info(f"  checked {key} {mins:.1f} minutes ago")
+            if self.options.trace: logger.info(f"  checked {key} {mins:.1f} minutes ago")
             if mins < 15: 
                 logger.info(f"{key}: skip b/c checked < 15 mins")
                 change_list.temporary_skip(key, xurl, "age < 15 mins")
@@ -107,7 +141,7 @@ class PageScanner():
                 change_list.record_skip(key, xurl, "skip flag set")
                 return False
 
-            if self.trace: logger.info(f"fetch {xurl}")
+            if self.options.trace: logger.info(f"fetch {xurl}")
             remote_raw_content, status = self.url_manager.fetch(xurl)
             is_bad, msg = is_bad_content(remote_raw_content)
             if is_bad:
@@ -160,18 +194,22 @@ class PageScanner():
 
 
 
-# --------------------
 def main():
+
+    options = ScannerOptions()    
+    options.parse_args()
+
+    if options.show_help:
+        print(options.get_help_text())
+        exit(-1)
 
     base_dir = "C:\\data\\corona19-data-archive"
     main_sheet = "https://docs.google.com/spreadsheets/d/18oVRrHj3c183mHmq3m89_163yuYltLNlOmPerQ18E8w/htmlview?sle=true#"
-    scanner = PageScanner(base_dir, main_sheet)
+    scanner = PageScanner(base_dir, main_sheet, options=options)
     
-    if False:
-        scanner.rerun_clean = True
+    if options.clean:
         scanner.clean_html()
     else:
-        # scanner.auto_push = False
         scanner.fetch_from_sources()
 
 if __name__ == "__main__":
