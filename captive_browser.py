@@ -187,6 +187,11 @@ if __name__ == "__main__":
     capture.screenshot("va_tableau", "Virginia Tableau Page",
         "https://public.tableau.com/views/VirginiaCOVID-19Dashboard/VirginiaCOVID-19Dashboard?:embed=yes&:display_count=yes&:showVizHome=no&:toolbar=no"    )
 
+    # screenshot is noisy
+    #capture.screenshot("mo_power_bi", "Missouri Power BI",
+    #    "https://health.mo.gov/living/healthcondiseases/communicable/novel-coronavirus/"
+    #)
+
     capture.close()
     capture.publish()
 
