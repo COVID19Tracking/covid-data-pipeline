@@ -12,7 +12,7 @@ urllib3.disable_warnings()
 def fetch(page: str) -> [bytes, int]:
     #print(f"fetch {page}")
     try:
-        resp = requests.get(page, verify=False)
+        resp = requests.get(page, verify=False, timeout=30)
         return resp.content, resp.status_code
     except Exception as ex:
         logger.error(f"Exception: {ex}")
