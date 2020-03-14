@@ -42,6 +42,8 @@ parser.add_argument('--trace', dest='trace', action='store_true', default=False,
     help='turn on tracing')
 parser.add_argument('-a', '--auto_push', dest='auto_push', action='store_true', default=False,
     help='checkin to the git repo at end of run')
+parser.add_argument('--rerun_now', dest='rerun_now', action='store_true', default=False,
+    help='include items that were fetched in the last 15 minutes')
 parser.add_argument('-i', '--image', dest='capture_image', action='store_true', default=False,
     help='capture image after each change')
 
@@ -153,10 +155,13 @@ class PageScanner():
 
             mins = change_list.get_minutes_since_last_check(key)
             if self.options.trace: logger.info(f"  checked {key} {mins:.1f} minutes ago")
-            if mins < 15: 
-                logger.info(f"{key}: skip b/c checked < 15 mins")
-                change_list.temporary_skip(key, xurl, "age < 15 mins")
-                return False
+            if mins < 15.0: 
+                if self.options.rerun_now:
+                    logger.info(f"{key}: checked {mins:.1f} mins ago")
+                else:
+                    logger.info(f"{key}: checked {mins:.1f} mins ago -> skip b/c < 15 mins")
+                    change_list.temporary_skip(key, xurl, "age < 15 mins")
+                    return False
 
             if skip:
                 change_list.record_skip(key, xurl, "skip flag set")

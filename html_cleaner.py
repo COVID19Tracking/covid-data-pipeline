@@ -34,8 +34,12 @@ class HtmlCleaner:
         elif n == "href":
             if v.startswith("#") and self.is_guid(v): 
                 elem.attrib[n] = "#"
-            elif "urldefensepoint.com" in v:
-                elem.attrib[n] = "http://urldefensepoint.com"
+            elif v.startswith("https://www.google.com/url?q="):
+                if self.trace: logger.info(f"google >>{v}<<")
+                idx = v.find("&ust=")
+                if idx > 0: 
+                    if self.trace: logger.info("removed ust")
+                    elem.attrib[n] = v[0:idx]
             elif v.startswith("https://twitter.com") and elem.text != None and elem.text.startswith("@"):
                 elem.getparent().remove(elem)
         elif n == "src":

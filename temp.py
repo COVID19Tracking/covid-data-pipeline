@@ -1,6 +1,7 @@
 from lxml import html
 from html_cleaner import HtmlCleaner
 
+# ------------------------------------------------
 def test_guid():
 
     cleaner = HtmlCleaner(trace=True)
@@ -12,7 +13,7 @@ def test_guid():
 '''
     s_out = cleaner.Clean(s_in)
 
-
+# ------------------------------------------------
 def test_twitter():
 
     cleaner = HtmlCleaner(trace=True)
@@ -41,5 +42,34 @@ def test_twitter():
     '''
     s_out = cleaner.Clean(s_in)
 
+# ------------------------------------------------
+def test_urldefense():
+
+    cleaner = HtmlCleaner(trace=True)
+    s_in = '''
+<ul>
+<li><span>People who have general questions about coronavirus disease 2019 can call CO HELP at 303-389-1687 or 1-877-462-2911 for answers in many languages. Email COHELP@RMPDC.org for answers in English.</span></li>
+<li>
+<span>Coloradans can also visit the</span><span><a href="https://www.google.com/url?q=https://urldefense.proofpoint.com/v2/url?u%3Dhttps-3A__www.cdc.gov_coronavirus_2019-2Dncov_faq.html%26d%3DDwMFaQ%26c%3DsdnEM9SRGFuMt5z5w3AhsPNahmNicq64TgF1JwNR0cs%26r%3Dps-X2zYjdP7VRiDdNzbgRwL7OM4FMFF3UC46SdZWICk%26m%3DXrCCHKhIT71jB4D-Mnxc_lHBYdTC9ABrsKmcosWlxPE%26s%3D254sNkzOKrmw8Gdu6nzX4P-6-cMqNh8XGzb4idXHJkI%26e%3D&amp;sa=D&amp;ust=1584224563845000">&#194;&#160;CDC</a></span><span>&#194;&#160;and</span><span><a href="https://www.google.com/url?q=https://urldefense.proofpoint.com/v2/url?u%3Dhttps-3A__www.colorado.gov_pacific_cdphe_2019-2Dnovel-2Dcoronavirus%26d%3DDwMFaQ%26c%3DsdnEM9SRGFuMt5z5w3AhsPNahmNicq64TgF1JwNR0cs%26r%3Dps-X2zYjdP7VRiDdNzbgRwL7OM4FMFF3UC46SdZWICk%26m%3DXrCCHKhIT71jB4D-Mnxc_lHBYdTC9ABrsKmcosWlxPE%26s%3D-fHGxhwc4D4LzsShTda-5aHQwLq3kYg5hRH-dASDkCk%26e%3D&amp;sa=D&amp;ust=1584224563846000">&#194;&#160;CDPHE</a></span><span>&#194;&#160;websites for more information on best practices.</span>
+</li>
+<li>
+<span>If you have upcoming travel plans, visit the</span><span><a href="https://www.google.com/url?q=https://urldefense.proofpoint.com/v2/url?u%3Dhttps-3A__www.cdc.gov_coronavirus_2019-2Dncov_travelers_index.html%26d%3DDwMFaQ%26c%3DsdnEM9SRGFuMt5z5w3AhsPNahmNicq64TgF1JwNR0cs%26r%3DfQf2K8W1OAJ1DAepL49iDt5a53fcOLIiLOchBjm-eWw%26m%3DBh9td1MBLmyy6jDQmiKFjkWtkw6dJhyKEmV_N4B2S3U%26s%3D0jn17dUUdUlDd6wR85htnU5jPaDozOGx_R1AWWehOck%26e%3D&amp;sa=D&amp;ust=1584224563847000">&#194;&#160;CDC&#226;&#128;&#153;s website</a></span><span>&#194;&#160;for the latest travel information.</span>
+</li>
+</ul>
+'''
+    s_out = cleaner.Clean(s_in)
+
+# -------------------------
+def test_argis():
+
+    cleaner = HtmlCleaner(trace=True)
+    s_in = '''
+                                <iframe frameborder="0" src="https://www.arcgis.com/apps/opsdashboard/index.html#/c091b679e7f64fa78628de361f64eb92"></iframe>
+'''
+    s_out = cleaner.Clean(s_in)
+
+# ---
 #test_guid()
-test_twitter()
+#test_twitter()
+test_urldefense()
+
