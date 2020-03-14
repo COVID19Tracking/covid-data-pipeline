@@ -186,6 +186,10 @@ if __name__ == "__main__":
     capture.screenshot("wy_data", "Wyoming Data Page",
         "https://health.wyo.gov/publichealth/infectious-disease-epidemiology-unit/disease/novel-coronavirus/"
     )
+
+    capture.screenshot("va_data", "Virginia Data Page",
+        "https://public.tableau.com/views/VirginiaCOVID-19Dashboard/VirginiaCOVID-19Dashboard?:embed=yes&:display_count=yes&:showVizHome=no&:toolbar=no"    )
+
     capture.close()
     capture.publish()
 
