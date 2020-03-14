@@ -12,6 +12,7 @@
 
 from typing import List, Union
 from lxml import html, etree
+import re
 
 def safe_starts_with(val: Union[str, None], prefix: str) -> bool:
     if val == None: return False
@@ -84,6 +85,14 @@ def regularize_if_co_data(elem: html.Element) -> bool:
     clobber(elem)
     return True
 
+def remove_attribs(elem: html.Element):
+    names = [x for x in elem.attrib]
+    for n in names: del elem.attrib[n]
+
+def is_guid(xid: str) -> bool:
+    if xid == None: return False
+    return re.match("[a-zA-Z]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", xid) != None
+
 def regularize_other(elem: html.Element):
     " other cases "
 
@@ -97,12 +106,22 @@ def regularize_other(elem: html.Element):
         if elem.attrib.get("id") == "DeltaFormDigest":
             elem.text = "[removed]"
             while len(elem) > 0: elem.remove(elem[0])
+        elif is_guid(elem.attrib.get("id")): 
+            elem.attrib["id"] = "[guid]"
+        # DC
+        elif safe_contains(elem.attrib.get("class"), "view-custom-headers-and-footers"):
+            elem.attrib["class"] = "[removed]"
         # IL
         elif safe_starts_with(elem.attrib.get("class"), "view view-tweets"):          
             elem.attrib["class"] = "[removed]"
         # OH
         elif safe_contains(elem.attrib.get("class"), " id-"):          
             elem.attrib["class"] = "[removed]"
+    elif elem.tag == "span":
+        # IL
+        if safe_contains(elem.attrib.get("class"), "views-field-created-time"):
+            elem.attrib["class"] = "[removed]"
+
 
     elif elem.tag == "script":
 
@@ -110,6 +129,9 @@ def regularize_other(elem: html.Element):
         if safe_starts_with(elem.text, "jQuery.extend(Drupal.setting"):
             elem.text = "[removed]"
         elif safe_starts_with(elem.text, "window.NREUM"):
+            elem.text = "[removed]"
+        # DC
+        elif safe_starts_with(elem.text, "window.NREUM||(NREUM"):
             elem.text = "[removed]"
         # OH
         elif safe_contains(elem.text, "var WASReqURL = ") or safe_contains(elem.text, "wpModules.theme.WindowUtils"):
@@ -124,6 +146,9 @@ def regularize_other(elem: html.Element):
         # MO and NJ
         elif safe_contains(elem.attrib.get("src"), "_Incapsula_Resource"):
             elem.attrib["src"] = "/_Incapsula_Resource"
+        # NC
+        elif safe_contains(elem.text, "-jQuery.extend(Drupal.settings, "):
+            elem.text = "[removed]"
         # NE
         elif safe_contains(elem.text, "var g_correlationId = '"):
             elem.text = "[removed]"
@@ -137,6 +162,14 @@ def regularize_other(elem: html.Element):
         elif safe_starts_with(elem.attrib.get("id"), "EktronScriptBlock"):
             elem.attrib["id"] = "EktronScriptBlock"
             elem.text = "[removed]"
+        # main_sheet
+        elif elem.attrib.get("nonce") != None:
+            elem.attrib["nonce"] = "[removed]"
+            if safe_starts_with(elem.text, "_docs_flag_initialData="):
+                elem.text = "[removed]"
+            if safe_starts_with(elem.text, "document.addEventList"):
+                elem.text = "[removed]"
+                
     elif elem.tag == "noscript":        
         # RI and WA
         elem.text = ""
@@ -145,6 +178,9 @@ def regularize_other(elem: html.Element):
         # CT
         if elem.attrib.get("name") == "VIcurrentDateTime":
             elem.attrib["content"] = "[removed]"
+        # CO
+        elif elem.attrib.get("property") in ["og:updated_time", "article:modified_time"]:
+            elem.attrib["content"] = "[removed]"     
     elif elem.tag == "link":
         # OH
         if safe_starts_with(elem.attrib.get("href"), "/wps/portal/gov"):
@@ -155,10 +191,29 @@ def regularize_other(elem: html.Element):
         if elem.attrib.get("class") == "left-navigation__link":
             elem.attrib["href"] = "[removed]"
             elem.text = ""
+        # OR
+        elif safe_starts_with(elem.attrib.get("role"), "tab") and is_guid(elem.attrib.get("id")):
+            remove_attribs(elem)
     elif elem.tag == "body":
         # KY
-        if safe_starts_with(elem.attrib.get("class"), "brwsr-safari"):
-            elem.attrib["class"] = "brwsr-safari"
+        if safe_starts_with(elem.attrib.get("class"), "brwsr-"):
+            elem.attrib["class"] = "brwsr-"
+    elif elem.tag == "h1" or elem.tag == "h2":
+        # CA
+        if len(elem) > 0 and elem[0].tag == "br":
+            del elem[0]
+    elif elem.tag == "style":
+        # DC
+        if safe_starts_with(elem.text, "/* Global Styles */"):
+            elem.text = "[removed]"
+        # main_sheet
+        elif elem.attrib.get("nonce") != None:
+            elem.attrib["nonce"] = "[removed]"
+
+    elif elem.tag == etree.Comment:
+        if safe_contains(elem.text, "Michigan"):
+            elem.text = "[removed]"
+
 
     for ch in elem:
         regularize_other(ch)
