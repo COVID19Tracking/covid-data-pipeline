@@ -108,13 +108,13 @@ class SpecializedCapture():
 
         logger.info(f"  screenshot {key}")
 
-        ximages_dir = os.path.join(temp_dir, "images")
+        ximages_dir = os.path.join(self.temp_dir, "images")
         if not os.path.exists(ximages_dir): os.makedirs(ximages_dir)
 
-        xpath = os.path.join(temp_dir,  f"{key}.png")
-        xpath_temp = os.path.join(temp_dir,  f"{key}_temp.png")
-        xpath_prev = os.path.join(temp_dir,  f"{key}_prev.png")
-        xpath_diff = os.path.join(temp_dir,  f"{key}_diff.png")
+        xpath = os.path.join(self.temp_dir,  f"{key}.png")
+        xpath_temp = os.path.join(self.temp_dir,  f"{key}_temp.png")
+        xpath_prev = os.path.join(self.temp_dir,  f"{key}_prev.png")
+        xpath_diff = os.path.join(self.temp_dir,  f"{key}_diff.png")
 
         logger.info(f"    1. get content from {url}")
         self.browser.get(url)
@@ -146,11 +146,11 @@ class SpecializedCapture():
         xkey_image = self.cache_images.import_file(key_image, xpath)
 
         # also make a copy in the temp dir so we can preview HTML
-        xpath_unique = os.path.join(temp_dir, "images", xkey_image)
+        xpath_unique = os.path.join(self.temp_dir, "images", xkey_image)
         shutil.copyfile(xpath, xpath_unique)
 
         logger.info("    5. publish HTML snippet")
-        xpath_html = os.path.join(temp_dir, f"{key}.html")
+        xpath_html = os.path.join(self.temp_dir, f"{key}.html")
         with open(xpath_html, "w") as f:
             f.write(f"""
     <html>
@@ -183,12 +183,6 @@ if __name__ == "__main__":
     capture.screenshot("wy_data", "Wyoming Data Page",
         "https://health.wyo.gov/publichealth/infectious-disease-epidemiology-unit/disease/novel-coronavirus/"
     )
-    capture.screenshot("wy_data", "Wyoming Data Page",
-        "https://health.wyo.gov/publichealth/infectious-disease-epidemiology-unit/disease/novel-coronavirus/"
-    )
-
-    capture.screenshot("va_tableau", "Virginia Tableau Page",
-        "https://public.tableau.com/views/VirginiaCOVID-19Dashboard/VirginiaCOVID-19Dashboard?:embed=yes&:display_count=yes&:showVizHome=no&:toolbar=no"    )
 
     capture.close()
     capture.publish()
