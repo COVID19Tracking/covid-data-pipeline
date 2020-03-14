@@ -1,7 +1,16 @@
-import re
+from lxml import html
+from html_cleaner import HtmlCleaner
 
-def is_guid(xid: str) -> bool:
-    return re.match("[a-zA-Z]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", xid) != None
+def test_guid():
 
-xid = "errb7391988-6a42-4168-b4d9-a7f93e49c0a5"
-print(f"{xid}: {is_guid(xid)}")
+    cleaner = HtmlCleaner(trace=True)
+
+    s_in = '''
+<div id="ctl00_ctl00_ctl25_g_a3feef12_d0b6_4c10_904d_9c726d142a82">
+    XYZ
+</div>
+'''
+    s_out = cleaner.Clean(s_in)
+
+
+test_guid()
