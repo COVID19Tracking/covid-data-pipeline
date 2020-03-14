@@ -187,7 +187,7 @@ if __name__ == "__main__":
         "https://health.wyo.gov/publichealth/infectious-disease-epidemiology-unit/disease/novel-coronavirus/"
     )
 
-    capture.screenshot("va_data", "Virginia Data Page",
+    capture.screenshot("va_tableau", "Virginia Tableau Page",
         "https://public.tableau.com/views/VirginiaCOVID-19Dashboard/VirginiaCOVID-19Dashboard?:embed=yes&:display_count=yes&:showVizHome=no&:toolbar=no"    )
 
     capture.close()
