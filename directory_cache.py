@@ -86,6 +86,13 @@ class DirectoryCache:
             result.append(x)
         return result
 
+    def list_files(self) -> List[str]:
+
+        result = []
+        for x in os.listdir(self.work_dir):
+            result.append(x)
+        return result
+
 
     def load(self, key: str) -> Union[bytes, None]:
 

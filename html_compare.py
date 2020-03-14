@@ -1,3 +1,7 @@
+#
+# Obsolete
+#
+
 
 import re
 from directory_cache import DirectoryCache

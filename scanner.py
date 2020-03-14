@@ -12,23 +12,29 @@ from html_compare import HTMLCompare
 from sheet_parser import SheetParser
 from url_manager import UrlManager
 
-from cov19_regularize import regularize
+#from cov19_regularize import regularize
+from html_cleaner import HtmlCleaner
 
 from util import is_bad_content, get_host, save_data_to_github
 
 class PageScanner():
 
-    def __init__(self, base_dir:str, main_sheet_url: str):
+    def __init__(self, base_dir:str, main_sheet_url: str,
+            rerun_clean = False, auto_push = False, trace = False):
         self.main_sheet_url = main_sheet_url
         
         self.base_dir = base_dir
         self.cache_raw = DirectoryCache(os.path.join(base_dir, "raw")) 
-        self.cache_cleaned = DirectoryCache(os.path.join(base_dir, "cleaned")) 
+        self.cache_clean = DirectoryCache(os.path.join(base_dir, "clean")) 
         self.cache_diff = DirectoryCache(os.path.join(base_dir, "diff")) 
 
         self.url_manager = UrlManager()
 
-        self.trace = False
+        self.html_cleaner = HtmlCleaner()
+
+        self.auto_push = auto_push
+        self.rerun_clean = rerun_clean
+        self.trace = trace
 
     def fetch_from_sources(self) -> Dict[str, str]:
         " load the google sheet and parse out the individual state URLs"
@@ -47,9 +53,26 @@ class PageScanner():
         finally:
             change_list.finish_run()
 
-            logger.info(f"  [in-memory content cache took {self.}")
-            #print(f"run finished on {host} at {change_list.start_date.isoformat()}")
-            #save_data_to_github(self.base_dir, f"{change_list.start_date.isoformat()} on {host}")
+            logger.info(f"  [in-memory content cache took {self.url_manager.size}")
+            print(f"run finished on {host} at {change_list.start_date.isoformat()}")
+            
+            if self.auto_push:
+                save_data_to_github(self.base_dir, f"{change_list.start_date.isoformat()} on {host}")
+            else:
+                print("github push is DISABLED")
+
+    def clean_html(self):
+        # -- rebuild clean files (if necessary)
+        is_first = False
+        for key in self.cache_raw.list_html_files():
+            if self.rerun_clean or not self.cache_clean.exists(key):
+                if is_first:
+                    logger.info(f"clean existing files...")
+                    is_first = False
+                logger.info(f"  clean {key}")
+                local_raw_content =  self.cache_raw.load(key)
+                local_clean_content = self.html_cleaner.Clean(local_raw_content)
+                self.cache_clean.save(local_clean_content, key)
 
 
     def _main_loop(self, change_list: ChangeList) -> Dict[str, str]:
@@ -84,11 +107,9 @@ class PageScanner():
                 change_list.record_skip(key, xurl, "skip flag set")
                 return False
 
-            local_content =  self.cache_raw.load(key)
-
             if self.trace: logger.info(f"fetch {xurl}")
-            remote_content, status = self.url_manager.fetch(xurl)
-            is_bad, msg = is_bad_content(remote_content)
+            remote_raw_content, status = self.url_manager.fetch(xurl)
+            is_bad, msg = is_bad_content(remote_raw_content)
             if is_bad:
                 change_list.record_failed(key, xurl, msg)
                 return False
@@ -97,25 +118,27 @@ class PageScanner():
                 change_list.record_failed(state, xurl, f"HTTP status {status}")
                 return False
 
-            remote_content = regularize(remote_content)
+            local_clean_content =  self.cache_clean.load(key)
+            remote_clean_content = self.html_cleaner.Clean(remote_raw_content)
 
-            if local_content != remote_content:
-                self.cache_raw.save(remote_content, key)
+            if local_clean_content != remote_clean_content:
+                self.cache_raw.save(remote_raw_content, key)
+                self.cache_clean.save(remote_clean_content, key)
                 change_list.record_changed(key, xurl)
             else:
                 change_list.record_unchanged(key, xurl)
                 return False
 
-        # -- get google worksheet
+        self.clean_html()
 
+        # -- get google worksheet
         logger.info("fetch main page...")
         
-        fetch_if_changed("main_sheet.html", self.main_sheet_url)
+        fetch_if_changed("main_sheet", self.main_sheet_url)
         content = self.cache_raw.load("main_sheet.html") 
 
         parser = SheetParser()
         df_config = parser.get_config(content)
-
 
         # -- fetch pages found in worksheet
         skip = False
@@ -143,7 +166,13 @@ def main():
     base_dir = "C:\\data\\corona19-data-archive"
     main_sheet = "https://docs.google.com/spreadsheets/d/18oVRrHj3c183mHmq3m89_163yuYltLNlOmPerQ18E8w/htmlview?sle=true#"
     scanner = PageScanner(base_dir, main_sheet)
-    scanner.fetch_from_sources()
+    
+    if False:
+        scanner.rerun_clean = True
+        scanner.clean_html()
+    else:
+        # scanner.auto_push = False
+        scanner.fetch_from_sources()
 
 if __name__ == "__main__":
     main()
