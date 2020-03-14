@@ -31,6 +31,15 @@ def test_twitter():
 
     s_out = cleaner.Clean(s_in)
 
+    s_in = '''
+<span>RT <a href="http://twitter.com/ReadyIllinois">@ReadyIllinois</a><a href="https://t.co/4tkXWjCnxV">https://t.co/4tkXWjCnxV</a></span></span><span>        <span>- <em>55 min 56 sec</em> ago</span></span>
+    '''
+    s_out = cleaner.Clean(s_in)
+
+    s_in = '''
+  <span>        <span>Businesses and employers: please encourage employees to stay home if they&#8217;re feeling sick. Prevent community spread&#8230; <a href="https://t.co/eubxb2zOtO">https://t.co/eubxb2zOtO</a></span></span><span>        <span>- <em>14 hours 32 min</em> ago</span></span>
+    '''
+    s_out = cleaner.Clean(s_in)
 
 #test_guid()
 test_twitter()

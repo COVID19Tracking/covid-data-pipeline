@@ -73,6 +73,8 @@ class HtmlCleaner:
 
     def remove_twitter_cluster(self, elem: html.Element):
 
+        if self.trace: logger.info(f"  twitter: check")
+
         # check it
         if elem.tag != "span": 
             if self.trace: logger.info(f"  twitter: not span")
@@ -91,35 +93,29 @@ class HtmlCleaner:
                 if self.trace: logger.info(f"  twitter: child bad link")
                 return
         p = elem.getparent()
-        if len(p) != 1:
+        if len(p) != 1 and len(p) != 2:
             if self.trace: logger.info(f"  twitter: parent length ({len(p)})")
             return 
         p = p.getparent()
-        if len(p) != 2:
+        if len(p) != 1 and len(p) != 2:
             if self.trace: logger.info(f"  twitter: parent.parent length ({len(p)})")
             return 
 
-        elem_next = p[1]
+        elem_next = p[len(p)-1]
         if elem_next == None: 
             if self.trace: logger.info(f"  twitter: missing next")
             return 
-        if len(elem_next) != 1 or elem_next[0].tag != "span": 
-            if self.trace: logger.info(f"  twitter: next span")
-            return
-        
-        elem_next = elem_next[0]
-        if len(elem_next) != 1 or elem_next[0].tag != "em": 
-            if self.trace: logger.info(f"  twitter: next em")
-            return
-        if elem_next[0].tail.strip() != "ago":
-            if self.trace: logger.info(f"  twitter: ago")
-            return
+
+        text = html.tostring(elem_next)
+        if self.trace: logger.info(f"  twitter next >>{text}<<")
+        if not b"> ago" in text:
+            if self.trace: logger.info(f"  twitter: missing ago")
+            return 
 
         # mark it for removal
         if self.trace: logger.info(f"  twitter: remove")
-        p.text = "[twitter]"
-        self.to_remove.append(p[0])
-        self.to_remove.append(p[1])
+        p.text = ""
+        for e in p: self.to_remove.append(e)
 
 
     def clean_element(self, elem : html.Element):
@@ -137,7 +133,11 @@ class HtmlCleaner:
 
         if tag == "a":
             href = elem.attrib.get("href")
-            if href != None and href.startswith("https://twitter.com"):
+            if href != None and (
+                href.startswith("https://twitter.com") or 
+                href.startswith("http://twitter.com") or
+                href.startswith("https://t.co")
+                ):                
                 self.remove_twitter_cluster(elem.getparent())
 
         if tag == "svg":
@@ -167,7 +167,12 @@ class HtmlCleaner:
         self.clean_element(doc)
 
         for x in self.to_remove:
-            x.getparent().remove(x)
+            p = x.getparent()
+            if p != None: 
+                p.remove(x)
+            #else:
+            #    for e in x: x.remove(e)
+            #    doc = x
 
         out_content = html.tostring(doc, pretty_print=True)
         if type(content) == str:
