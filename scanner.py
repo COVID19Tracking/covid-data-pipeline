@@ -42,6 +42,8 @@ parser.add_argument('--trace', dest='trace', action='store_true', default=False,
     help='turn on tracing')
 parser.add_argument('-a', '--auto_push', dest='auto_push', action='store_true', default=False,
     help='checkin to the git repo at end of run')
+parser.add_argument('-i', '--image', dest='capture_image', action='store_true', default=False,
+    help='capture image after each change')
 
 # data dir args
 
@@ -58,7 +60,7 @@ parser.add_argument(
 
 class PageScanner():
 
-    def __init__(self, base_dir:str, main_sheet_url:str, args:Namespace):
+    def __init__(self, base_dir: str, main_sheet_url: str, args: Namespace):
         self.main_sheet_url = main_sheet_url
         
         self.base_dir = base_dir
@@ -71,10 +73,21 @@ class PageScanner():
         self.html_cleaner = HtmlCleaner()
 
         self.options = args
+        self._capture: SpecializedCapture = None 
 
-        publish_dir = os.path.join(self.options.base_dir, 'captive-browser')
-        self.capture = SpecializedCapture(
-            self.options.temp_dir, publish_dir)
+    def get_capture(self) -> SpecializedCapture:
+        if self._capture == None:
+            publish_dir = os.path.join(self.options.base_dir, 'captive-browser')
+            self._capture = SpecializedCapture(
+                self.options.temp_dir, publish_dir)
+        return self._capture
+
+    def shutdown_capture(self):
+        if self._capture != None:
+            self._capture.close()
+            if self.options.auto_push:
+                self._capture.publish()
+        self._capture = None
 
     def fetch_from_sources(self) -> Dict[str, str]:
         " load the google sheet and parse out the individual state URLs"
@@ -93,9 +106,7 @@ class PageScanner():
         finally:
             change_list.finish_run()
 
-            self.capture.close()
-            if self.options.auto_push:
-                self.capture.publish()
+            self.shutdown_capture()
 
             logger.info(f"  [in-memory content cache took {self.url_manager.size}")
             logger.info(f"run finished on {host} at {change_list.start_date.isoformat()}")
@@ -169,7 +180,10 @@ class PageScanner():
                 self.cache_raw.save(remote_raw_content, key)
                 self.cache_clean.save(remote_clean_content, key)
                 change_list.record_changed(key, xurl)
-                self.capture.screenshot(state, state, xurl)
+
+                if self.options.capture_image:
+                    c = self.get_capture()
+                    c.screenshot(state, state, xurl)
             else:
                 change_list.record_unchanged(key, xurl)
                 return False
