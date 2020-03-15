@@ -16,7 +16,7 @@ from util import file_age, format_mins
 class DirectoryCache:
     """  a simple disk-based page cache """
 
-    def __init__(self, work_dir: str, trace: bool):
+    def __init__(self, work_dir: str, trace: bool=False):
         self.work_dir = work_dir
 
         if not os.path.isdir(self.work_dir):
