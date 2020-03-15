@@ -149,6 +149,7 @@ class DirectoryCache:
                     content = f.read()
             except Exception as ex:
                 time.sleep(0.1)
+                chk = os.path.isfile(xpath)
                 if self.trace: logger.debug(f"read {xpath} failed, isfile={chk}")
                 if i < 2:
                     logger.debug(f"read {xpath} retry") 

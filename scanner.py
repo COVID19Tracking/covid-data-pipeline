@@ -22,7 +22,9 @@ import urllib.parse
 from directory_cache import DirectoryCache
 from change_list import ChangeList
 from sheet_parser import SheetParser
+
 from url_manager import UrlManager
+from url_source import UrlSource, get_available_sources
 
 from html_cleaner import HtmlCleaner
 from html_extracter import HtmlExtracter
@@ -235,11 +237,11 @@ class PageScanner():
         self.clean_html()
 
         # -- get states info from API
+        url_sources = get_available_sources()
+        logger.info(f"processing source {url_sources[0].name})")
+        df_config = url_sources[0].load()
 
-        states_info = requests.get('https://covid.cape.io/states/info.csv').content
-        df_config = pd.read_csv(io.StringIO(states_info.decode('utf-8')))
-
-        # -- fetch state pages
+        # -- fetch pages
         skip = False
 
         for idx, r in df_config.iterrows():
