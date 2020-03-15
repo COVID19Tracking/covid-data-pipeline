@@ -18,6 +18,10 @@ class UrlManager:
     def is_repeat(self, url: str) -> bool:
         return url in self.history
 
+    def reset(self):
+        self.history = {}
+        self.size = 0
+
     def fetch(self, url: str) -> Tuple[bytes, int]:
 
         if url in self.history:

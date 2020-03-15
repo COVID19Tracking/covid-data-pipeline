@@ -103,6 +103,8 @@ class PageScanner():
     def process(self) -> Dict[str, str]:
         " run the pipeline "
 
+        self.url_manager.reset()
+
         change_list = ChangeList(self.cache_raw)        
         
         host = get_host()
