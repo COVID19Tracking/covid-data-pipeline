@@ -1,5 +1,6 @@
+# OBSOLETE
 import os
-from cache import PageCache
+from directory_cache import DirectoryCache
 from loguru import logger
 from typing import List
 from lxml import html, etree

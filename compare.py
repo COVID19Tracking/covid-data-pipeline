@@ -1,3 +1,4 @@
+# OBSOLETE
 # run through all the A/B pairs and confirm that normalization works
 
 import os
@@ -8,7 +9,6 @@ from lxml import html, etree
 from unidecode import unidecode
 
 from directory_cache import DirectoryCache
-from cov19_regularize import regularize
 
 def remove_identical_nodes(elem1: html.Element, elem2: html.Element) -> bool:
     
@@ -48,8 +48,8 @@ class PageCompare():
             x = fn.replace(".html", "")
             if x in ignore_list: continue
 
-            content_a = self.cache_a.load(fn)
-            content_b = self.cache_b.load(fn)
+            content_a = self.cache_a.read(fn)
+            content_b = self.cache_b.read(fn)
             if content_a == content_b:
                 logger.info(f"=================| {fn}")
                 logger.info("   data is SAME")
@@ -60,9 +60,6 @@ class PageCompare():
             if os.path.exists(fn_a): os.remove(fn_a)
             if os.path.exists(fn_b): os.remove(fn_b)
 
-            content_a = regularize(content_a)
-            content_b = regularize(content_b)
-            
             if content_a == content_b:
                 logger.info(f"=================| {fn}")
                 logger.info("   data is FIXED")
