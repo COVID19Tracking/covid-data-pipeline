@@ -162,8 +162,8 @@ class HtmlCleaner:
                 return
             elem.tail = None
         elif tag in ["a"]:
-            if elem.text != None:
-                elem.text = elem.text.strip()
+            #if elem.text != None:
+            #    elem.text = elem.text.strip()
             elem.tail = None
 
         self.clean_attributes(elem)
