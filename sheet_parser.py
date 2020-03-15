@@ -1,3 +1,6 @@
+#
+# Extracts data from a google sheet -- not used anymore 
+#
 import os
 from typing import List, Dict
 from loguru import logger

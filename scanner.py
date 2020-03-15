@@ -12,9 +12,10 @@ import sys
 import re
 import requests
 import io
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import pandas as pd
 import pytz
+import time
 from loguru import logger
 from typing import List, Dict, Tuple
 
@@ -49,6 +50,8 @@ parser.add_argument('-a', '--auto_push', dest='auto_push', action='store_true', 
     help='checkin to the git repo at end of run')
 parser.add_argument('--rerun_now', dest='rerun_now', action='store_true', default=False,
     help='include items that were fetched in the last 15 minutes')
+parser.add_argument('--continuous', dest='continuous', action='store_true', default=False,
+    help='Run at 0:05 and 0:35')
 parser.add_argument('-i', '--image', dest='capture_image', action='store_true', default=False,
     help='capture image after each change')
 
@@ -67,8 +70,7 @@ parser.add_argument(
 
 class PageScanner():
 
-    def __init__(self, base_dir: str, main_sheet_url: str, args: Namespace):
-        self.main_sheet_url = main_sheet_url
+    def __init__(self, base_dir: str, args: Namespace):
         
         self.base_dir = base_dir
         self.cache_raw = DirectoryCache(os.path.join(base_dir, "raw")) 
@@ -98,14 +100,14 @@ class PageScanner():
                 self._capture.publish()
         self._capture = None
 
-    def fetch_from_sources(self) -> Dict[str, str]:
-        " load the google sheet and parse out the individual state URLs"
+    def process(self) -> Dict[str, str]:
+        " run the pipeline "
 
         change_list = ChangeList(self.cache_raw)        
         
         host = get_host()
-        print(f"run started on {host} at {change_list.start_date.isoformat()}")
-        
+        print(f"=== run started on {host} at {change_list.start_date.isoformat()}")
+
         change_list.start_run()
         try:
             return self._main_loop(change_list)
@@ -252,6 +254,42 @@ class PageScanner():
                 else:
                     fetch_if_changed(location + "_data", source, data_url, skip=skip)
             
+# ---- 
+def run_continuous(scanner: PageScanner):
+    
+    print("starting continuous run")
+    scanner.process()
+
+    def next_time() -> datetime:
+        t = datetime.now()
+        xmin = t.minute
+        xmin = 5 if xmin > 20 and xmin < 50 else 35
+        t = datetime(t.year, t.month, t.day, t.hour, xmin, 0)
+        return t
+
+    cnt = 1
+    t = next_time()
+    print(f"sleep until {t}")
+
+    while True:
+        time.sleep(15.0)
+        if datetime.now() < t: continue
+
+        print("==================================")
+        print(f"=== run {cnt} at {t}")
+        print("==================================")
+
+        try:
+            scanner.process()
+        except Exception as ex:
+            logger.exception(ex)
+            print(f"run failed, wait 5 minutes and try again")
+            t = t + timedelta(minutes=5)
+
+        print("==================================")
+        print("")
+        t = next_time()
+        cnt += 1
 
 
 def main(args_list=None):
@@ -259,13 +297,16 @@ def main(args_list=None):
         args_list = sys.argv[1:]
     args = parser.parse_args(args_list)
 
-    main_sheet = "https://docs.google.com/spreadsheets/d/18oVRrHj3c183mHmq3m89_163yuYltLNlOmPerQ18E8w/htmlview?sle=true#"
-    scanner = PageScanner(args.base_dir, main_sheet, args=args)
+    #main_sheet = "https://docs.google.com/spreadsheets/d/18oVRrHj3c183mHmq3m89_163yuYltLNlOmPerQ18E8w/htmlview?sle=true#"
     
-    if args.clean:
+    scanner = PageScanner(args.base_dir, args=args)
+    
+    if args.continuous:
+        run_continuous(scanner)  
+    elif args.clean:
         scanner.clean_html()
     else:
-        scanner.fetch_from_sources()
+        scanner.process()
 
 if __name__ == "__main__":
     main()

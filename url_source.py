@@ -71,9 +71,13 @@ def parse_google_csv(content: bytes) -> pd.DataFrame:
     df_config["dataSite"] = df_config["dataSite"].apply(clean_google_url) 
     return df_config
 
+def parse_urlwatch(content: bytes) -> pd.DataFrame:
+    raise Exception("Not implemented")    
+
 def get_available_sources():
     return [
-        UrlSource("google-states", "https://covid.cape.io/states/info.csv", parse_google_csv, display_dups=True)
+        UrlSource("google-states", "https://covid.cape.io/states/info.csv", parse_google_csv, display_dups=True),
+        UrlSource("google-states", "https://covidtracking.com/api/urls", parse_urlwatch, display_dups=False)
     ]
 
 
