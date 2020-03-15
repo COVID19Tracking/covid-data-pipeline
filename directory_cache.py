@@ -94,20 +94,6 @@ class DirectoryCache:
         return result
 
 
-    def load(self, key: str) -> Union[bytes, None]:
-
-        file_name = self.encode_key(key)
-
-        xpath = os.path.join(self.work_dir, file_name)
-        if not os.path.isfile(xpath): return None
-
-        r = open(xpath, "rb")
-        try:
-            content = r.read()
-            return content
-        finally:
-            r.close()
-
     def import_file(self, key: str, src) -> str:
 
         xkey = self.encode_key(key)
@@ -143,8 +129,21 @@ class DirectoryCache:
             raise Exception("Destination must be str or DirectoryCache")
         return self.encode_key(new_key)
 
+    def read(self, key: str) -> Union[bytes, None]:
 
-    def save(self, content: bytes, key: str):
+        file_name = self.encode_key(key)
+
+        xpath = os.path.join(self.work_dir, file_name)
+        if not os.path.isfile(xpath): return None
+
+        r = open(xpath, "rb")
+        try:
+            content = r.read()
+            return content
+        finally:
+            r.close()
+
+    def write(self, key: str, content: bytes):
 
         if content == None: return
         if not isinstance(content, bytes):
@@ -155,6 +154,15 @@ class DirectoryCache:
 
         with open(xpath, "wb") as w:
             w.write(content)
+
+    def remove(self, key: str):
+
+        file_name = self.encode_key(key)
+        xpath = os.path.join(self.work_dir, file_name)
+
+        if os.path.exists(xpath):
+            os.remove(xpath)
+
 
     def cleanup(self, max_age_mins: int):
         for fn in os.listdir(self.work_dir):
