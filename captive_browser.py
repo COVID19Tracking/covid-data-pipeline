@@ -14,7 +14,7 @@ import numpy as np
 def are_images_same(buffer1: bytes, buffer2: bytes) -> Tuple[bool, bytes]:
 
     if buffer1.shape != buffer2.shape:
-        return True
+        return False
 
     diff = buffer1 - buffer2
     xmin, xmax = diff.min(), diff.max()
