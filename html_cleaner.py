@@ -142,6 +142,11 @@ class HtmlCleaner:
             elem.getparent().remove(elem)
             return
 
+        if tag == "form":
+            a = elem.attrib.get("action")
+            if a != None and a.lower().endswith(".aspx"):
+                elem.attrib["action"] = a.lower()
+
         if tag == "a":
             href = elem.attrib.get("href")
             if href != None and (
@@ -188,6 +193,8 @@ class HtmlCleaner:
             #    doc = x
 
         out_content = html.tostring(doc, pretty_print=True)
+        out_content = out_content.replace(b"\r", b"")
+
         if type(content) == str:
             out_content = out_content.decode()
 
