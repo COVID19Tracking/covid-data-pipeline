@@ -1,23 +1,27 @@
+# working file for testing the cleaner.  should be a unit test
+
 from lxml import html
 from html_cleaner import HtmlCleaner
 
+def try_one(s_in: str):
+    cleaner = HtmlCleaner(trace=True)
+    cleaner.clean(s_in)
+
 # ------------------------------------------------
 def test_guid():
-
-    cleaner = HtmlCleaner(trace=True)
-
-    s_in = '''
+    try_one('''
 <div id="ctl00_ctl00_ctl25_g_a3feef12_d0b6_4c10_904d_9c726d142a82">
     XYZ
 </div>
-'''
-    s_out = cleaner.Clean(s_in)
+''')
+
+
+# tableau csv
+# https://tableau.azdhs.gov/views/COVID-19Dashboard/COVID-19table.csv
 
 # ------------------------------------------------
 def test_twitter():
-
-    cleaner = HtmlCleaner(trace=True)
-    s_in = '''
+    try_one('''
 <span>
     <span>
         <a href="http://twitter.com/IDPH">@IDPH</a>
@@ -28,25 +32,20 @@ def test_twitter():
 <span>
     <span>- <em>12 hours 23 min</em> ago</span>
 </span>
-'''
+''')
 
-    s_out = cleaner.Clean(s_in)
-
-    s_in = '''
+    try_one('''
 <span>RT <a href="http://twitter.com/ReadyIllinois">@ReadyIllinois</a><a href="https://t.co/4tkXWjCnxV">https://t.co/4tkXWjCnxV</a></span></span><span>        <span>- <em>55 min 56 sec</em> ago</span></span>
-    '''
-    s_out = cleaner.Clean(s_in)
-
-    s_in = '''
+    ''')
+    
+    try_one('''
   <span>        <span>Businesses and employers: please encourage employees to stay home if they&#8217;re feeling sick. Prevent community spread&#8230; <a href="https://t.co/eubxb2zOtO">https://t.co/eubxb2zOtO</a></span></span><span>        <span>- <em>14 hours 32 min</em> ago</span></span>
-    '''
-    s_out = cleaner.Clean(s_in)
+    ''')
 
 # ------------------------------------------------
 def test_urldefense():
 
-    cleaner = HtmlCleaner(trace=True)
-    s_in = '''
+    try_one('''
 <ul>
 <li><span>People who have general questions about coronavirus disease 2019 can call CO HELP at 303-389-1687 or 1-877-462-2911 for answers in many languages. Email COHELP@RMPDC.org for answers in English.</span></li>
 <li>
@@ -56,20 +55,19 @@ def test_urldefense():
 <span>If you have upcoming travel plans, visit the</span><span><a href="https://www.google.com/url?q=https://urldefense.proofpoint.com/v2/url?u%3Dhttps-3A__www.cdc.gov_coronavirus_2019-2Dncov_travelers_index.html%26d%3DDwMFaQ%26c%3DsdnEM9SRGFuMt5z5w3AhsPNahmNicq64TgF1JwNR0cs%26r%3DfQf2K8W1OAJ1DAepL49iDt5a53fcOLIiLOchBjm-eWw%26m%3DBh9td1MBLmyy6jDQmiKFjkWtkw6dJhyKEmV_N4B2S3U%26s%3D0jn17dUUdUlDd6wR85htnU5jPaDozOGx_R1AWWehOck%26e%3D&amp;sa=D&amp;ust=1584224563847000">&#194;&#160;CDC&#226;&#128;&#153;s website</a></span><span>&#194;&#160;for the latest travel information.</span>
 </li>
 </ul>
-'''
-    s_out = cleaner.Clean(s_in)
+''')
 
 # -------------------------
 def test_argis():
 
-    cleaner = HtmlCleaner(trace=True)
-    s_in = '''
+    #TODO: make cleaner return a list of URLs that need to get followed.
+    try_one('''
                                 <iframe frameborder="0" src="https://www.arcgis.com/apps/opsdashboard/index.html#/c091b679e7f64fa78628de361f64eb92"></iframe>
-'''
-    s_out = cleaner.Clean(s_in)
+''')
+
 
 # ---
-#test_guid()
-#test_twitter()
+test_guid()
+test_twitter()
 test_urldefense()
 
