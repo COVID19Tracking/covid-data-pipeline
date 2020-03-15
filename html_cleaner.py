@@ -131,8 +131,6 @@ class HtmlCleaner:
 
     def clean_element(self, elem : html.Element):
 
-        logger.info(f"elem >>\n{html.tostring(elem)}<<")
-
         tag = elem.tag
         if tag in ["script", "noscript", "style", "meta", "input", "link", "img", "font"]:
             elem.getparent().remove(elem)
