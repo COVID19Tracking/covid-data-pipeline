@@ -129,11 +129,8 @@ class SpecializedCapture():
         self.cache.import_file(f"{key}.html", xpath_html)
         self.changed = True
 
-if __name__ == "__main__":
-    temp_dir = "c:\\temp\\public-cache"
-    publish_dir = "C:\\data\\corona19-data-archive\\captive-browser"
+def special_cases(capture: SpecializedCapture):
 
-    capture = SpecializedCapture(temp_dir, publish_dir)
     capture.screenshot("az_tableau", "Arizona Main Page",
         "https://www.azdhs.gov/preparedness/epidemiology-disease-control/infectious-disease-epidemiology/index.php#novel-coronavirus-home"
     )
@@ -155,6 +152,15 @@ if __name__ == "__main__":
     #    "https://health.mo.gov/living/healthcondiseases/communicable/novel-coronavirus/"
     #)
 
-    capture.close()
+
+if __name__ == "__main__":
+    temp_dir = "c:\\temp\\public-cache"
+    publish_dir = "C:\\data\\corona19-data-archive\\captive-browser"
+
+    capture = SpecializedCapture(temp_dir, publish_dir)
+    try:
+        special_cases(capture)
+    finally:
+        capture.close()
     capture.publish()
 

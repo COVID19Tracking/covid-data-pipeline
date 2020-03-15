@@ -29,7 +29,7 @@ from url_source import UrlSource, get_available_sources
 from html_cleaner import HtmlCleaner
 from html_extracter import HtmlExtracter
 
-from specialized_capture import SpecializedCapture
+from specialized_capture import SpecializedCapture, special_cases
 
 from util import is_bad_content, get_host, save_data_to_github
 
@@ -258,47 +258,57 @@ class PageScanner():
             
 # ---- 
 def run_continuous(scanner: PageScanner):
-    
-    print("starting continuous run")
-    scanner.process()
 
-    def next_time() -> datetime:
-        t = datetime.now()
-        xday, xhour, xmin = t.day, t.hour, t.minute
-        if xmin > 20 and xmin < 50:
-            t = t + timedelta(hours=1)
-            xmin = 5
-        else:
-            xmin = 35
-        t = datetime(t.year, t.month, t.day, t.hour, xmin, 0)
-        return t
+    # temp code to get it running
+    capture: SpecializedCapture = None
+    if True:
+        temp_dir = "c:\\temp\\public-cache"
+        publish_dir = "C:\\data\\corona19-data-archive\\captive-browser"
+        capture = SpecializedCapture(temp_dir, publish_dir)
 
-    cnt = 1
-    t = next_time()
-    print(f"sleep until {t}")
+    try:
+        print("starting continuous run")
+        if capture: special_cases(capture)
+        scanner.process()
 
-    while True:
-        time.sleep(15.0)
-        if datetime.now() < t: continue
+        def next_time() -> datetime:
+            t = datetime.now()
+            xmin = t.minute
+            if xmin > 20 and xmin < 50:
+                t = t + timedelta(hours=1)
+                xmin = 5
+            else:
+                xmin = 35
+            t = datetime(t.year, t.month, t.day, t.hour, xmin, 0)
+            return t
 
-        print("==================================")
-        print(f"=== run {cnt} at {t}")
-        print("==================================")
-
-        try:
-            pass
-            #scanner.process()
-        except Exception as ex:
-            logger.exception(ex)
-            print(f"run failed, wait 5 minutes and try again")
-            t = t + timedelta(minutes=5)
-
-        print("==================================")
-        print("")
+        cnt = 1
         t = next_time()
         print(f"sleep until {t}")
-        cnt += 1
 
+        while True:
+            time.sleep(15.0)
+            if datetime.now() < t: continue
+
+            print("==================================")
+            print(f"=== run {cnt} at {t}")
+            print("==================================")
+
+            try:
+                if capture: special_cases(capture)
+                scanner.process()
+            except Exception as ex:
+                logger.exception(ex)
+                print(f"run failed, wait 5 minutes and try again")
+                t = t + timedelta(minutes=5)
+
+            print("==================================")
+            print("")
+            t = next_time()
+            print(f"sleep until {t}")
+            cnt += 1
+    finally:
+        capture.close()
 
 def main(args_list=None):
     if args_list is None:
