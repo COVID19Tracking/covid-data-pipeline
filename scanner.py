@@ -264,8 +264,12 @@ def run_continuous(scanner: PageScanner):
 
     def next_time() -> datetime:
         t = datetime.now()
-        xmin = t.minute
-        xmin = 5 if xmin > 20 and xmin < 50 else 35
+        xday, xhour, xmin = t.day, t.hour, t.minute
+        if xmin > 20 and xmin < 50:
+            t = t + timedelta(hours=1)
+            xmin = 5
+        else:
+            xmin = 35
         t = datetime(t.year, t.month, t.day, t.hour, xmin, 0)
         return t
 
@@ -282,7 +286,8 @@ def run_continuous(scanner: PageScanner):
         print("==================================")
 
         try:
-            scanner.process()
+            pass
+            #scanner.process()
         except Exception as ex:
             logger.exception(ex)
             print(f"run failed, wait 5 minutes and try again")
@@ -291,6 +296,7 @@ def run_continuous(scanner: PageScanner):
         print("==================================")
         print("")
         t = next_time()
+        print(f"sleep until {t}")
         cnt += 1
 
 
