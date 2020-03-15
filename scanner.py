@@ -17,7 +17,6 @@ import pandas as pd
 import pytz
 from loguru import logger
 from typing import List, Dict, Tuple
-import urllib.parse
 
 from directory_cache import DirectoryCache
 from change_list import ChangeList
@@ -164,17 +163,6 @@ class PageScanner():
 
     def _main_loop(self, change_list: ChangeList) -> Dict[str, str]:
 
-        def clean_url(s: str) -> str:
-            if s == None or s == "": return None
-            idx = s.find("?q=")
-            if idx < 0: return s
-            idx += 3
-            eidx = s.find("&", idx)
-            if eidx < 0: eidx = len(s) 
-            s = s[idx:eidx]
-            s =  urllib.parse.unquote_plus(s)
-            return s
-
         def remove_duplicate_if_exists(state: str, other_state: str):
             key = state + ".html"
 
@@ -246,8 +234,8 @@ class PageScanner():
 
         for idx, r in df_config.iterrows():
             state = r["state"]
-            general_url = clean_url(r["covid19Site"])
-            data_url = clean_url(r["dataSite"])
+            general_url = r["covid19Site"]
+            data_url = r["dataSite"]
 
             if general_url == None:
                 logger.warning(f"  no main url for {state}")
