@@ -96,9 +96,9 @@ def test_argis():
 ''')
 
 
-# ---
-#test_guid()
-#test_twitter()
-#test_urldefense()
-#test_ca_placeholder()
-test_ca_skiplink()
+if __name__ == "__main__":
+    #test_guid()
+    #test_twitter()
+    #test_urldefense()
+    #test_ca_placeholder()
+    test_ca_skiplink()

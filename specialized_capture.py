@@ -8,7 +8,7 @@ import shutil
 from loguru import logger
 
 
-from captive_browser import CaptiveBrowser
+from captive_browser import CaptiveBrowser, are_images_same
 from directory_cache import DirectoryCache
 
 from util import format_datetime_for_file, get_host, save_data_to_github
@@ -40,32 +40,6 @@ class SpecializedCapture():
 
             save_data_to_github(self.publish_dir, msg)
 
-    def test_image(self, path1: str, path2: str, out_path: str) -> Tuple[bool, bool]:
-
-        buffer1 = imageio.imread(path1, as_gray=True)
-        buffer2 = imageio.imread(path2, as_gray=True)
-
-        is_same, is_empty = False, False
-
-        xmin, xmax = buffer1.min(), buffer1.max()
-        is_empty = xmin == xmax
-
-        if buffer1.shape != buffer2.shape:
-            return is_same, is_empty
-
-        diff = buffer1 - buffer2
-        xmin, xmax = diff.min(), diff.max()
-        if xmin != xmax and xmin != 0 and xmax != 255.0:
-            scale = 255.0 / (xmax - xmin)
-            diff = ((diff - xmin) * scale).astype(np.uint8)
-            #h = np.histogram(diff)
-            #print(h)
-            imageio.imwrite(out_path, diff, format="jpg")
-        else:
-            is_same = True
-
-        return is_same, is_empty
-
     def remove(self, key: str):
         self.cache.remove(key)
 
@@ -90,42 +64,31 @@ class SpecializedCapture():
         logger.info(f"    1. get content from {url}")
         self.browser.get(url)
         
-        cnt = 2
-        for retry in range(5):
+        logger.info(f"    2. wait for 5 seconds")
+        time.sleep(5)
 
-            logger.info(f"    {cnt}. sleep for 5 seconds")
-            time.sleep(5)
-            cnt += 1
+        logger.info(f"    3. save screenshot to {xpath}")
+        buffer_new = self.browser.screenshot(xpath_temp)        
+        if buffer_new is None:
+            logger.error("      *** could not capture image")
+            return
 
-            logger.info(f"   {cnt}. save screenshot")
-            self.browser.save_screenshot(xpath_temp)
-            cnt += 1
-
-            if os.path.exists(xpath):
-                is_same, is_empty = self.test_image(xpath, xpath_temp, xpath_diff)
-                if is_empty:
-                    logger.info(f"      image is empty -> retry ({retry} of 5)")
-                    continue
-                if is_same:
-                    logger.info("      images are the same -> return")
-                    return
-                else:
-                    logger.warning("      images are different")
-                    if os.path.exists(xpath_prev): os.remove(xpath_prev)
-                    if os.path.exists(xpath): os.rename(xpath, xpath_prev)
-                    os.rename(xpath_temp, xpath)
-                    break
+        if os.path.exists(xpath):
+            buffer_old = imageio.imread(xpath, as_gray=True)
+            is_same, buffer_diff  = are_images_same(buffer_new, buffer_old)
+            if is_same:
+                logger.info("      images are the same -> return")
+                if os.path.exists(xpath_diff): os.remove(xpath_diff)
+                return
             else:
-                is_same, is_empty = self.test_image(xpath, xpath, xpath_diff)
-                if is_empty:
-                    logger.info(f"      image is empty -> retry ({retry} of 5)")
-                    continue
-                logger.warning("      image is new")
+                logger.warning("      images are different")
+                if os.path.exists(xpath_prev): os.remove(xpath_prev)
+                if os.path.exists(xpath): os.rename(xpath, xpath_prev)
                 os.rename(xpath_temp, xpath)
-                break
-
-        if is_empty:
-            logger.error("      *** image is empty after 25 seconds")
+                imageio.imwrite(buffer_diff, xpath)
+        else:
+            logger.warning("      image is new")
+            os.rename(xpath_temp, xpath)
 
         dt = datetime.now(timezone.utc)
         timestamp = format_datetime_for_file(dt)

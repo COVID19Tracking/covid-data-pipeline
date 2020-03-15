@@ -17,8 +17,6 @@ def test_load():
         print(f"load {x.name}")
         x.load()
 
-def main():
+if __name__ == "__main__":
     test_load()
 
-if __name__ == "__main__":
-    main()
