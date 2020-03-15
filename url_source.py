@@ -8,6 +8,9 @@ import urllib.parse
 
 from util import fetch
 
+from change_list import ChangeList
+from directory_cache import DirectoryCache
+
 def clean_google_url(s: str) -> str:
     if s == None or s == "": return None
     idx = s.find("?q=")
@@ -43,6 +46,23 @@ class UrlSource:
         self.df["source_name"] = self.name
 
         return self.df
+
+    def save_if_changed(self, cache: DirectoryCache, change_list: ChangeList):
+        buffer = io.StringIO()
+        self.df.to_html(buffer)
+        new_content = buffer.getvalue().encode()
+
+        key = f"{self.name}.html"
+        old_content = cache.read(key)
+        if old_content == new_content:
+            change_list.record_unchanged(key, self.name, self.endpoint)
+        else:
+            cache.write(key, new_content)
+            change_list.record_changed(key, self.name, self.endpoint)
+
+
+
+
 
 def parse_google_csv(content: bytes) -> pd.DataFrame:
     df_config = pd.read_csv(io.StringIO(content.decode('utf-8')))

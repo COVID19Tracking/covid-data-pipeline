@@ -163,23 +163,23 @@ class PageScanner():
 
     def _main_loop(self, change_list: ChangeList) -> Dict[str, str]:
 
-        def remove_duplicate_if_exists(state: str, other_state: str):
-            key = state + ".html"
+        def remove_duplicate_if_exists(location: str, source: str, other_state: str):
+            key = location + ".html"
 
             self.cache_raw.remove(key)
             self.cache_clean.remove(key)
-            change_list.record_duplicate(key, f"duplicate of {other_state}")
+            change_list.record_duplicate(key, source, f"duplicate of {other_state}")
 
             if self.options.capture_image:
                 c = self.get_capture()
-                c.remove(state)
+                c.remove(location)
 
-        def fetch_if_changed(state: str, xurl: str, skip: bool = False) -> bool:
+        def fetch_if_changed(location: str, source: str, xurl: str, skip: bool = False) -> bool:
 
-            key = state + ".html"
+            key = location + ".html"
 
             if xurl == "" or xurl == None or xurl == "None": 
-                change_list.record_skip(key, xurl, "missing url")
+                change_list.record_skip(key, source, xurl, "missing url")
                 return
 
             mins = change_list.get_minutes_since_last_check(key)
@@ -193,18 +193,18 @@ class PageScanner():
                     return False
 
             if skip:
-                change_list.record_skip(key, xurl, "skip flag set")
+                change_list.record_skip(key, source, xurl, "skip flag set")
                 return False
 
             if self.options.trace: logger.info(f"fetch {xurl}")
             remote_raw_content, status = self.url_manager.fetch(xurl)
             is_bad, msg = is_bad_content(remote_raw_content)
             if is_bad:
-                change_list.record_failed(key, xurl, msg)
+                change_list.record_failed(key, source, xurl, msg)
                 return False
 
             if status > 300:
-                change_list.record_failed(state, xurl, f"HTTP status {status}")
+                change_list.record_failed(location, source, xurl, f"HTTP status {status}")
                 return False
 
             local_clean_content =  self.cache_clean.read(key)
@@ -213,13 +213,13 @@ class PageScanner():
             if local_clean_content != remote_clean_content:
                 self.cache_raw.write(key, remote_raw_content)
                 self.cache_clean.write(key, remote_clean_content)
-                change_list.record_changed(key, xurl)
+                change_list.record_changed(key, source, xurl)
 
                 if self.options.capture_image:
                     c = self.get_capture()
-                    c.screenshot(key, f"Screenshot for {state}", xurl)
+                    c.screenshot(key, f"Screenshot for {location}", xurl)
             else:
-                change_list.record_unchanged(key, xurl)
+                change_list.record_unchanged(key, source, xurl)
                 return False
 
         self.clean_html()
@@ -228,27 +228,29 @@ class PageScanner():
         url_sources = get_available_sources()
         logger.info(f"processing source {url_sources[0].name})")
         df_config = url_sources[0].load()
+        url_sources[0].save_if_changed(self.cache_raw, change_list)
 
         # -- fetch pages
         skip = False
 
         for idx, r in df_config.iterrows():
-            state = r["state"]
+            location = r["state"]
+            source = r["source_name"]
             general_url = r["covid19Site"]
             data_url = r["dataSite"]
 
             if general_url == None:
-                logger.warning(f"  no main url for {state}")
+                logger.warning(f"  no main url for {location}")
                 continue
 
             if idx % 10 == 1: change_list.save_progress()
 
-            fetch_if_changed(state, general_url, skip=skip)
+            fetch_if_changed(location, source, general_url, skip=skip)
             if data_url != None:
                 if general_url == data_url:
-                    remove_duplicate_if_exists(state + "_data", state)
+                    remove_duplicate_if_exists(location + "_data", source, location)
                 else:
-                    fetch_if_changed(state + "_data", data_url, skip=skip)
+                    fetch_if_changed(location + "_data", source, data_url, skip=skip)
             
 
 

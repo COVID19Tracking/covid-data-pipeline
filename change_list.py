@@ -77,7 +77,7 @@ class ChangeList:
 
         return delta.total_seconds() / 60.0
 
-    def update_status(self, name: str, status: str, xurl: str, msg: str) -> Tuple[Dict, Dict, str]:
+    def update_status(self, name: str, source: str, status: str, xurl: str, msg: str) -> Tuple[Dict, Dict, str]:
         
         xnow = datetime.utcnow().isoformat()
 
@@ -85,7 +85,7 @@ class ChangeList:
         idx = self._lookup.get(name)
         if idx == None:         
             x = None   
-            y = { "name": name, "status": status, "url": xurl, "msg": msg, "complete": True,
+            y = { "name": name, "source": source, "status": status, "url": xurl, "msg": msg, "complete": True,
                   "added": xnow, "checked": None, "updated": None, "failed": None }
             self._lookup[name] = len(self._items)
             self._items.append(y)
@@ -93,6 +93,7 @@ class ChangeList:
             x = self._items[idx]
             y = x.copy()
             y["status"] = status
+            y["source"] = source
             y["url"] = xurl
             y["msg"] = msg
             y["complete"] = True
@@ -100,57 +101,57 @@ class ChangeList:
             
         return y, x, xnow
 
-    def record_failed(self, name: str, xurl: str, msg: str):
+    def record_failed(self, name: str, source: str, xurl: str, msg: str):
 
         status = "FAILED"
         logger.error(f"     {name}: {status}")
         logger.error(f"     {name}: url={xurl} msg={msg}")
 
-        y, x, xnow = self.update_status(name, status, xurl, msg)
+        y, x, xnow = self.update_status(name, source, status, xurl, msg)
         if x != None and x["status"] != "FAILED":
             y["failed"] = xnow
 
 
-    def record_unchanged(self, name: str, xurl: str, msg: str = ""):
+    def record_unchanged(self, name: str, source: str, xurl: str, msg: str = ""):
 
         status = "unchanged"
         logger.info(f"  {name}: {status}")
 
-        y, _, xnow = self.update_status(name, status, xurl, msg)
+        y, _, xnow = self.update_status(name, source, status, xurl, msg)
         y["checked"] = xnow
         y["failed"] = None
 
-    def record_skip(self, name: str, xurl: str, msg: str = ""):
+    def record_skip(self, name: str, source: str, xurl: str, msg: str = ""):
 
         status = "skip"
         logger.info(f"  {name}: {status} {msg}")
 
-        self.update_status(name, status, xurl, msg)
+        self.update_status(name, source, status, xurl, msg)
 
-    def record_duplicate(self, name: str, xurl: str, msg: str = ""):
+    def record_duplicate(self, name: str, source: str, xurl: str, msg: str = ""):
 
         status = "duplicate"
         logger.info(f"  {name}: {status} {msg}")
 
-        self.update_status(name, status, xurl, msg)
+        self.update_status(name, source, status, xurl, msg)
 
-    def temporary_skip(self, name: str, xurl: str, msg: str = ""):
+    def temporary_skip(self, name: str, source: str, xurl: str, msg: str = ""):
         " make as complete but don't change state "
         status = "skip"
         logger.info(f"  {name}: {status} {msg}")
 
-        y, x, _ = self.update_status(name, status, xurl, msg)
+        y, x, _ = self.update_status(name, source, status, xurl, msg)
         if x != None:
             y["status"] = x["status"]
             y["msg"] = x["msg"]
 
 
-    def record_changed(self, name: str, xurl: str, msg: str = ""):
+    def record_changed(self, name: str, source: str, xurl: str, msg: str = ""):
 
         status = "CHANGED"
         logger.warning(f"    {name}: {status}")
 
-        y, _, xnow = self.update_status(name, status, xurl, msg)
+        y, _, xnow = self.update_status(name, source, status, xurl, msg)
         y["checked"] = xnow
         y["updated"] = xnow
         y["failed"] = None
@@ -168,10 +169,11 @@ class ChangeList:
             f.write(f"====== {status} ======\n")
             for i in range(len(self._items)):
                 x = self._items[i]
-                name, s, xurl, msg = x["name"], x["status"], x["url"], x["msg"]
+                name, source, status, xurl, msg = x["name"], x.get("source"), x["status"], x["url"], x["msg"]
+                if source == None: source = ""
                 if msg == None: msg = ""
                 if s != status: continue
-                f.write(f"{name}\t{status}\t{xurl}\t{msg}\n")
+                f.write(f"{name}\t{status}\t{source}\t{xurl}\t{msg}\n")
             f.write(f"\n")
 
         with open(fn, "w") as f_changes:

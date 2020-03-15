@@ -62,10 +62,6 @@ class HtmlCleaner:
         elif n == "src":
             if v.startswith("https://www.youtube.com/"):
                 elem.attrib[n] = "https://www.youtube.com"
-        elif n == "action":
-            del elem.attrib[n]
-        elif n == "onsubmit":
-            del elem.attrib[n]
 
     def clean_attributes(self, elem: html.Element):
         
@@ -158,8 +154,9 @@ class HtmlCleaner:
 
         if tag == "form":
             a = elem.attrib.get("action")
-            if a != None and a.lower().endswith(".aspx"):
-                elem.attrib["action"] = a.lower()
+            if a != None: del elem.attrib["action"] 
+            x = elem.attrib.get("onsubmit")
+            if x != None: del elem.attrib["onsubmit"] 
 
         if tag == "a":
             href = elem.attrib.get("href")
