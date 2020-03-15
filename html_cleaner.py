@@ -16,13 +16,13 @@ class HtmlCleaner:
         if elem.tag == "div":
             xid = elem.get("id")
             if xid == "DeltaPlaceHolderPageDescription" or xid == "DeltaPlaceHolderPageTitleInTitleArea": 
-                logger.debug("skip deltaplaceholder")
+                logger.debug("special case: remove deltaplaceholder for CA")
                 self.to_remove.append(elem.getparent())
                 return True
         elif elem.tag == "a":        
             href = elem.get("href")
             if href == "#ctl00_ctl65_SkipLink": 
-                logger.debug("skip link")
+                logger.debug("special case: remove skiplink for CA")
                 self.to_remove.append(elem.getparent())
                 return True
         return False
@@ -62,6 +62,10 @@ class HtmlCleaner:
         elif n == "src":
             if v.startswith("https://www.youtube.com/"):
                 elem.attrib[n] = "https://www.youtube.com"
+        elif n == "action":
+            del elem.attrib[n]
+        elif n == "onsubmit":
+            del elem.attrib[n]
 
     def clean_attributes(self, elem: html.Element):
         
