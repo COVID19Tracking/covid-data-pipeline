@@ -202,6 +202,7 @@ class PageScanner():
 
             if self.options.trace: logger.info(f"fetch {xurl}")
             remote_raw_content, status = self.url_manager.fetch(xurl)
+            
             is_bad, msg = is_bad_content(remote_raw_content)
             if is_bad:
                 change_list.record_failed(key, source, xurl, msg)
@@ -210,6 +211,8 @@ class PageScanner():
             if status > 300:
                 change_list.record_failed(location, source, xurl, f"HTTP status {status}")
                 return False
+
+            remote_raw_content = remote_raw_content.replace(b"\r", b"")
 
             local_clean_content =  self.cache_clean.read(key)
             remote_clean_content = self.html_cleaner.clean(remote_raw_content)
@@ -276,10 +279,13 @@ def run_continuous(scanner: PageScanner):
         def next_time() -> datetime:
             t = datetime.now()
             xmin = t.minute
-            if xmin > 20 and xmin < 50:
+            if xmin < 25:
+                xmin = 35
+            elif xmin < 55:
                 t = t + timedelta(hours=1)
                 xmin = 5
             else:
+                t = t + timedelta(hours=1)
                 xmin = 35
             t = datetime(t.year, t.month, t.day, t.hour, xmin, 0)
             return t

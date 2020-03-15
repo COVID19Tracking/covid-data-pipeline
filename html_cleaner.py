@@ -207,7 +207,6 @@ class HtmlCleaner:
             #    doc = x
 
         out_content = html.tostring(doc, pretty_print=True)
-        out_content = out_content.replace(b"\r", b"")
 
         if type(content) == str:
             out_content = out_content.decode()
