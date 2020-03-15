@@ -57,6 +57,20 @@ def test_urldefense():
 </ul>
 ''')
 
+def test_ca_placeholder():
+
+    try_one('''
+<div>
+                                    <h1 id="pageTitle">
+                                        <span id="DeltaPlaceHolderPageTitleInTitleArea">
+                                            
+												<span><a href="#ctl00_PlaceHolderPageTitleInTitleArea_ctl00_SkipLink"></a><span><a href="/programs/cid/dcdc/pages/immunization/ncov2019.aspx">ncov2019</a></span><a id="ctl00_PlaceHolderPageTitleInTitleArea_ctl00_SkipLink"></a></span></span><div id="DeltaPlaceHolderPageDescription">
+	
+                                            <a href="javascript:;" id="ms-pageDescriptionDiv">
+                                                </a>
+</div>
+''')
+
 # -------------------------
 def test_argis():
 
@@ -67,7 +81,7 @@ def test_argis():
 
 
 # ---
-test_guid()
-test_twitter()
-test_urldefense()
-
+#test_guid()
+#test_twitter()
+#test_urldefense()
+test_ca_placeholder()

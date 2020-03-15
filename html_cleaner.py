@@ -10,6 +10,13 @@ class HtmlCleaner:
         self.trace = trace
         self.to_remove = []
 
+    def is_special_case(self, elem: html.Element) -> bool:
+        xid = elem.get("id")
+        # -- stupid special case for CA
+        if xid == "DeltaPlaceHolderPageDescription": return True
+        if xid == "DeltaPlaceHolderPageTitleInTitleArea": return True
+        return False
+
     def is_guid(self, xid: str) -> bool:
         if xid == None: return False
         return re.search("[0-9a-f]{8}[\\-_][0-9a-f]{4}[\\-_][0-9a-f]{4}[\\-_][0-9a-f]{4}[\\-_][0-9a-f]{12}", xid) != None
@@ -124,6 +131,8 @@ class HtmlCleaner:
 
     def clean_element(self, elem : html.Element):
 
+        logger.info(f"elem >>\n{html.tostring(elem)}<<")
+
         tag = elem.tag
         if tag in ["script", "noscript", "style", "meta", "input", "link", "img", "font"]:
             elem.getparent().remove(elem)
@@ -150,11 +159,13 @@ class HtmlCleaner:
             for ch in elem: self.clean_element(ch)
 
         if tag in ["div", "span"]:
-            if self.is_empty(elem):
+            if self.is_empty(elem) or self.is_special_case(elem):
                 elem.getparent().remove(elem)
                 return
             elem.tail = None
         elif tag in ["a"]:
+            if elem.text != None:
+                elem.text = elem.text.strip()
             elem.tail = None
 
         self.clean_attributes(elem)

@@ -116,7 +116,7 @@ class PageScanner():
 
             self.shutdown_capture()
 
-            logger.info(f"  [in-memory content cache took {self.url_manager.size}")
+            logger.info(f"  [in-memory content cache took {self.url_manager.size*1e-6:.1f} MBs")
             logger.info(f"run finished on {host} at {change_list.start_date.isoformat()}")
             
             if self.options.auto_push:
