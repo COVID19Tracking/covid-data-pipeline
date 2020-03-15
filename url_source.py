@@ -5,6 +5,7 @@ from loguru import logger
 import io
 import pandas as pd
 import urllib.parse
+import json
 
 from util import fetch
 
@@ -13,6 +14,7 @@ from directory_cache import DirectoryCache
 
 def clean_google_url(s: str) -> str:
     if s == None or s == "": return None
+    if type(s) != str: return None
     idx = s.find("?q=")
     if idx < 0: return s
     idx += 3
@@ -33,6 +35,14 @@ class UrlSource:
 
         self.df = None
 
+    def check_result(self, df: pd.DataFrame):
+        if df is None or df.shape[0] == 0:
+            raise Exception(f"Parser returned no records for source {self.name}")        
+
+        if not "location" in df.columns: raise Exception("Missing location column")
+        if not "main_page" in df.columns: raise Exception("Missing main_page column")
+        if not "data_page" in df.columns: raise Exception("Missing data_page column")
+
     def load(self) -> pd.DataFrame:
         content, status = fetch(self.endpoint)
         if status >= 300:
@@ -40,11 +50,11 @@ class UrlSource:
         if content == None:
             raise Exception(f"Empty content {self.endpoint} for source {self.name}")
         
-        self.df = self.parser(content)
-        if self.df is None or self.df.shape[0] == 0:
-            raise Exception(f"Parser returned no records for source {self.name}")
-        self.df["source_name"] = self.name
+        df = self.parser(content)
+        self.check_result(df)
 
+        df["source_name"] = self.name
+        self.df = df
         return self.df
 
     def save_if_changed(self, cache: DirectoryCache, change_list: ChangeList):
@@ -65,19 +75,48 @@ class UrlSource:
 
 
 def parse_google_csv(content: bytes) -> pd.DataFrame:
-    df_config = pd.read_csv(io.StringIO(content.decode('utf-8')))
 
-    df_config["covid19Site"] = df_config["covid19Site"].apply(clean_google_url) 
-    df_config["dataSite"] = df_config["dataSite"].apply(clean_google_url) 
-    return df_config
+    df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+    #print(f"df = \n{df}")
+
+    df["location"] = df["state"]
+    df["main_page"] = df["covid19Site"].apply(clean_google_url) 
+    df["data_page"] = df["dataSite"].apply(clean_google_url) 
+
+    return df
 
 def parse_urlwatch(content: bytes) -> pd.DataFrame:
-    raise Exception("Not implemented")    
+    
+    recs = json.loads(content)
+    df = pd.DataFrame(recs)
+    df["location"] = df["name"]
+    df["main_page"] = df["url"].apply(clean_google_url) 
+    df["data_page"] = ""
 
+    names = {}
+    for x in df.itertuples():
+        cnt = names.get(x.name)
+        if cnt == None: cnt = 0
+        names[x.name] = cnt + 1
+
+        if cnt == 1:
+            print(f"assign 2nd url for {x.name} to data")
+            df.iloc[x.Index, "data_page"] = x.main_page
+            df.iloc[x.Index, "main_page"] = ""
+            df.iloc[x.Index, "location"] += "_data"
+            print(df.iloc[x.Index])
+        elif cnt > 1:            
+            print(f"scanner does not support {cnt} urls for {x.name} -> ignore")
+            df.iloc[x.Index, "main_page"] = ""
+            df.iloc[x.Index, "location"] += f"_{cnt}"
+
+    #print(f"df = \n{df}")
+    exit(-1)
+    
 def get_available_sources():
     return [
         UrlSource("google-states", "https://covid.cape.io/states/info.csv", parse_google_csv, display_dups=True),
-        UrlSource("google-states", "https://covidtracking.com/api/urls", parse_urlwatch, display_dups=False)
+        UrlSource("urlwatch", "https://covidtracking.com/api/urls", parse_urlwatch, display_dups=False)
     ]
 
 

@@ -228,7 +228,7 @@ class PageScanner():
 
         # -- get states info from API
         url_sources = get_available_sources()
-        logger.info(f"processing source {url_sources[0].name})")
+        logger.info(f"processing source {url_sources[0].name}")
         df_config = url_sources[0].load()
         url_sources[0].save_if_changed(self.cache_raw, change_list)
 
@@ -236,18 +236,20 @@ class PageScanner():
         skip = False
 
         for idx, r in df_config.iterrows():
-            location = r["state"]
+            location = r["location"]
             source = r["source_name"]
-            general_url = r["covid19Site"]
-            data_url = r["dataSite"]
+            general_url = r["main_page"]
+            data_url = r["data_page"]
 
-            if general_url == None:
-                logger.warning(f"  no main url for {location}")
+            if general_url == None and data_url == None:
+                logger.warning(f"  no urls for {location} -> skip")
+                change_list.record_skip(location)
                 continue
 
             if idx % 10 == 1: change_list.save_progress()
 
-            fetch_if_changed(location, source, general_url, skip=skip)
+            if general_url != None:
+                fetch_if_changed(location, source, general_url, skip=skip)
             if data_url != None:
                 if general_url == data_url:
                     remove_duplicate_if_exists(location + "_data", source, location)

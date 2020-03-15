@@ -1,4 +1,11 @@
+#
 # working file for testing the cleaner.  should be a unit test
+#
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('..'))
 
 from lxml import html
 from html_cleaner import HtmlCleaner
