@@ -2,23 +2,27 @@ import os
 import shutil
 import re
 import datetime
+import time
 
 from datetime import datetime, timezone
 from loguru import logger
 import pytz
 
 from typing import Union, List, Tuple, Dict
+import subprocess
 
 from util import file_age, format_mins
 
 class DirectoryCache:
     """  a simple disk-based page cache """
 
-    def __init__(self, work_dir: str):
+    def __init__(self, work_dir: str, trace: bool):
         self.work_dir = work_dir
 
         if not os.path.isdir(self.work_dir):
             os.makedirs(self.work_dir)
+
+        self.trace = trace
 
     def encode_key(self, key: str) -> str:
         """ convert to a file-stystem safe representation of a URL """
@@ -106,6 +110,7 @@ class DirectoryCache:
         else:
             raise Exception("Destination must be str or DirectoryCache")
 
+        if self.trace: logger.debug(f"import from {xfrom_path} to {xto_path}")
         if os.path.exists(xto_path): 
             if os.path.samefile(xfrom_path, xto_path): return
             os.remove(xto_path)
@@ -118,6 +123,7 @@ class DirectoryCache:
         
         if type(dest) is str:
             xto_path = os.path.join(dest, new_key) if new_key != None else dest
+            if self.trace: logger.debug(f"export from {xfrom_path} to {xto_path}")
             if os.path.exists(xto_path): 
                 if os.path.samefile(xfrom_path, xto_path): return
                 os.remove(xto_path)
@@ -134,14 +140,22 @@ class DirectoryCache:
         file_name = self.encode_key(key)
 
         xpath = os.path.join(self.work_dir, file_name)
-        if not os.path.isfile(xpath): return None
 
-        r = open(xpath, "rb")
-        try:
-            content = r.read()
-            return content
-        finally:
-            r.close()
+        for i in range(3):
+            if not os.path.isfile(xpath): return None
+            try:
+                if self.trace: logger.debug(f"read {xpath}")
+                with open(xpath, "rb") as f:
+                    content = f.read()
+            except Exception as ex:
+                time.sleep(0.1)
+                if self.trace: logger.debug(f"read {xpath} failed, isfile={chk}")
+                if i < 2:
+                    logger.debug(f"read {xpath} retry") 
+                    break
+                raise ex
+
+        return content
 
     def write(self, key: str, content: bytes):
 
@@ -152,8 +166,9 @@ class DirectoryCache:
         file_name = self.encode_key(key)
         xpath = os.path.join(self.work_dir, file_name)
 
-        with open(xpath, "wb") as w:
-            w.write(content)
+        if self.trace: logger.debug(f"write {xpath}")
+        with open(xpath, "wb") as f:
+            f.write(content)
 
     def remove(self, key: str):
 
@@ -161,18 +176,25 @@ class DirectoryCache:
         xpath = os.path.join(self.work_dir, file_name)
 
         if os.path.exists(xpath):
+            if self.trace: logger.debug(f"remove {xpath}")
             os.remove(xpath)
 
 
     def cleanup(self, max_age_mins: int):
+        if not os.path.isdir(self.work_dir): return
+        if self.trace: logger.debug(f"   cleanup {self.work_dir}")
+
         for fn in os.listdir(self.work_dir):
             xpath = os.path.join(self.work_dir, fn)
             if file_age(xpath) > max_age_mins:
+                if self.trace: logger.debug(f"   remove {xpath}")
                 os.remove(xpath)
 
     def reset(self):
         if not os.path.isdir(self.work_dir): return
+        if self.trace: logger.debug(f"   rest {self.work_dir}")
 
         for fn in os.listdir(self.work_dir):
             xpath = os.path.join(self.work_dir, fn)
+            if self.trace: logger.debug(f"   remove {xpath}")
             os.remove(xpath)
