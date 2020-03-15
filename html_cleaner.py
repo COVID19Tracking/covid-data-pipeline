@@ -10,11 +10,21 @@ class HtmlCleaner:
         self.trace = trace
         self.to_remove = []
 
-    def is_special_case(self, elem: html.Element) -> bool:
-        xid = elem.get("id")
-        # -- stupid special case for CA
-        if xid == "DeltaPlaceHolderPageDescription": return True
-        if xid == "DeltaPlaceHolderPageTitleInTitleArea": return True
+    def mark_special_case(self, elem: html.Element) -> bool:
+        " return element to remove "
+        # -- stupid special cases for CA
+        if elem.tag == "div":
+            xid = elem.get("id")
+            if xid == "DeltaPlaceHolderPageDescription" or xid == "DeltaPlaceHolderPageTitleInTitleArea": 
+                logger.debug("skip deltaplaceholder")
+                self.to_remove.append(elem.getparent())
+                return True
+        elif elem.tag == "a":        
+            href = elem.get("href")
+            if href == "#ctl00_ctl65_SkipLink": 
+                logger.debug("skip link")
+                self.to_remove.append(elem.getparent())
+                return True
         return False
 
     def is_guid(self, xid: str) -> bool:
@@ -162,11 +172,14 @@ class HtmlCleaner:
             for ch in elem: self.clean_element(ch)
 
         if tag in ["div", "span"]:
-            if self.is_empty(elem) or self.is_special_case(elem):
+            if self.is_empty(elem):
                 elem.getparent().remove(elem)
                 return
-            elem.tail = None
+            if self.mark_special_case(elem):
+                return
         elif tag in ["a"]:
+            if self.mark_special_case(elem):
+                return
             #if elem.text != None:
             #    elem.text = elem.text.strip()
             elem.tail = None

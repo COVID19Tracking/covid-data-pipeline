@@ -72,6 +72,15 @@ def test_ca_placeholder():
 ''')
 
 # -------------------------
+def test_ca_skiplink():
+    try_one('''
+<div>
+    <span><a href="#ctl00_ctl65_SkipLink"></a><span><a href="/Programs/CID/DCDC">Division of Communicable Disease Control</a></span><span> &gt; </span><span><a href="https://www.cdph.ca.gov/Programs/CID/DCDC/_layouts/15/listform.aspx?ListId=%7B6AAD4E4A%2DF5C6%2D484E%2D8D56%2DFD7746CD9D60%7D&amp;PageType=0">Pages</a></span><span> &gt; </span><span><a href="https://www.cdph.ca.gov/Programs/CID/DCDC/_layouts/15/listform.aspx?ListId=%7B6AAD4E4A%2DF5C6%2D484E%2D8D56%2DFD7746CD9D60%7D&amp;PageType=0&amp;RootFolder=%2FPrograms%2FCID%2FDCDC%2FPages%2FImmunization">Immunization</a></span><span> &gt; </span><span>ncov2019</span><a id="ctl00_ctl65_SkipLink"></a></span>
+    <span><a href="#ctl00_ctl65_SkipLink"></a><span><a href="/Programs/CID/DCDC">Division of Communicable Disease Control</a></span><span> &gt; </span><span><a href="https://www.cdph.ca.gov/Programs/CID/DCDC/_layouts/15/listform.aspx?ListId=%7B6AAD4E4A%2DF5C6%2D484E%2D8D56%2DFD7746CD9D60%7D&amp;PageType=0">Pages</a></span><span> &gt; </span><span><a href="https://www.cdph.ca.gov/Programs/CID/DCDC/_layouts/15/listform.aspx?ListId=%7B6AAD4E4A%2DF5C6%2D484E%2D8D56%2DFD7746CD9D60%7D&amp;PageType=0&amp;RootFolder=%2Fprograms%2Fcid%2Fdcdc%2Fpages%2Fimmunization">immunization</a></span><span> &gt; </span><span>ncov2019</span><a id="ctl00_ctl65_SkipLink"></a></span>
+</div>
+''')
+
+# -------------------------
 def test_argis():
 
     #TODO: make cleaner return a list of URLs that need to get followed.
@@ -84,4 +93,5 @@ def test_argis():
 #test_guid()
 #test_twitter()
 #test_urldefense()
-test_ca_placeholder()
+#test_ca_placeholder()
+test_ca_skiplink()
