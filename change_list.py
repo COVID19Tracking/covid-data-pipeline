@@ -127,6 +127,13 @@ class ChangeList:
 
         self.update_status(name, status, xurl, msg)
 
+    def record_duplicate(self, name: str, xurl: str, msg: str = ""):
+
+        status = "duplicate"
+        logger.info(f"  {name}: {status} {msg}")
+
+        self.update_status(name, status, xurl, msg)
+
     def temporary_skip(self, name: str, xurl: str, msg: str = ""):
         " make as complete but don't change state "
         status = "skip"
@@ -157,22 +164,15 @@ class ChangeList:
     def _write_text(self):
         fn = os.path.join(self.cache.work_dir, "change_list.txt")
         
-        changed = []
-        unchanged = []
-        errors = []
-        skipped = []
-        for x in self._items:
-            name = x["name"]
-            status = x["status"]
-
-            if status == "skipped":
-                skipped.append(x)
-            elif status == "unchanged":
-                unchanged.append(x)
-            elif status == "error":
-                errors.append(x)
-            else:
-                changed.append(x)
+        def write_block(f, status: str):
+            f.write(f"====== {status} ======\n")
+            for i in range(len(self._items)):
+                x = self._items[i]
+                name, s, xurl, msg = x["name"], x["status"], x["url"], x["msg"]
+                if msg == None: msg = ""
+                if s != status: continue
+                f.write(f"{name}\t{status}\t{xurl}\t{msg}\n")
+            f.write(f"\n")
 
         with open(fn, "w") as f_changes:
             f_changes.write(f"STATE CHANGE LIST\n\n")
@@ -182,38 +182,23 @@ class ChangeList:
             f_changes.write(f"  lapsed\t{self.time_lapsed}\n")
             f_changes.write(f"\n")
 
-            f_changes.write(f"  changed\t{len(changed)}\n")
-            f_changes.write(f"  unchanged\t{len(unchanged)}\n")
-            f_changes.write(f"  skipped\t{len(skipped)}\n")
-            f_changes.write(f"  errors\t{len(errors)}\n")
+            status = {}
+            for x in self._items:
+                s = x["status"]
+                cnt = status.get(s)
+                if cnt == None: cnt = 0
+                status[s] = cnt + 1
+
+            names = [x for x in status]
+            names.sort()
+
+            f_changes.write(f"STATUS COUNTS:\n")
+            for s in names:
+                f_changes.write(f"  {s}\t{status[s]}\n")
             f_changes.write(f"\n")
 
-            f_changes.write("====== ITEMS THAT HAVE CHANGED ======\n")
-            for x in changed:
-                name, status, xurl, msg = x["name"], x["status"], x["url"], x["msg"]
-                if msg == None: msg = ""            
-                f_changes.write(f"{name}\t{status}\t{xurl}\t{msg}\n")
-            f_changes.write(f"\n")
-
-            f_changes.write("====== ITEMS HAVE NOT CHANGED ======\n")
-            for x in unchanged:
-                name, status, xurl, msg = x["name"], x["status"], x["url"], x["msg"]
-                if msg == None: msg = ""            
-                f_changes.write(f"{name}\t{status}\t{xurl}\t{msg}\n")
-            f_changes.write(f"\n")
-
-            f_changes.write("====== ITEMS WHERE SKIPPED ======\n")
-            for x in skipped:
-                name, status, xurl, msg = x["name"], x["status"], x["url"], x["msg"]
-                if msg == None: msg = ""            
-                f_changes.write(f"{name}\t{status}\t{xurl}\t{msg}\n")
-            f_changes.write(f"\n")
-
-            f_changes.write("====== ITEMS WITH ERROR ======\n")
-            for x in errors:
-                name, status, xurl, msg = x["name"], x["status"], x["url"], x["msg"]
-                if msg == None: msg = ""            
-                f_changes.write(f"{name}\t{status}\t{xurl}\t{msg}\n")
+            for s in names:
+                write_block(f_changes, s)
 
     def _write_json(self):
         logger.info(f"time lapsed {self.time_lapsed}")

@@ -21,12 +21,13 @@ import urllib.parse
 
 from directory_cache import DirectoryCache
 from change_list import ChangeList
-from html_compare import HTMLCompare
 from sheet_parser import SheetParser
 from url_manager import UrlManager
 
 from html_cleaner import HtmlCleaner
-from captive_browser import SpecializedCapture
+from html_extracter import HtmlExtracter
+
+from specialized_capture import SpecializedCapture
 
 from util import is_bad_content, get_host, save_data_to_github
 
@@ -38,6 +39,9 @@ parser = ArgumentParser(
 parser.add_argument(
     '-c', '--clean', dest='clean', action='store_true', default=False,
     help='run the cleaner on everything')
+parser.add_argument(
+    '-x', '--extract', dest='extract', action='store_true', default=False,
+    help='run the extractor on everything')
 parser.add_argument('--trace', dest='trace', action='store_true', default=False,
     help='turn on tracing')
 parser.add_argument('-a', '--auto_push', dest='auto_push', action='store_true', default=False,
@@ -68,11 +72,13 @@ class PageScanner():
         self.base_dir = base_dir
         self.cache_raw = DirectoryCache(os.path.join(base_dir, "raw")) 
         self.cache_clean = DirectoryCache(os.path.join(base_dir, "clean")) 
+        self.cache_extract = DirectoryCache(os.path.join(base_dir, "extract")) 
         self.cache_diff = DirectoryCache(os.path.join(base_dir, "diff")) 
 
         self.url_manager = UrlManager()
 
         self.html_cleaner = HtmlCleaner()
+        self.html_extracter = HtmlExtracter()
 
         self.options = args
         self._capture: SpecializedCapture = None 
@@ -127,9 +133,31 @@ class PageScanner():
                     logger.info(f"clean existing files...")
                     is_first = False
                 logger.info(f"  clean {key}")
-                local_raw_content =  self.cache_raw.load(key)
-                local_clean_content = self.html_cleaner.Clean(local_raw_content)
-                self.cache_clean.save(local_clean_content, key)
+                local_raw_content =  self.cache_raw.read(key)
+                local_clean_content = self.html_cleaner.clean(local_raw_content)
+                self.cache_clean.write(key, local_clean_content)
+
+
+    def extract_html(self):
+        # -- rebuild extract files (if necessary)
+        is_first = False
+        for key in self.cache_clean.list_html_files():
+            if self.options.extract or not self.cache_extract.exists(key):
+                if is_first:
+                    logger.info(f"extract existing files...")
+                    is_first = False
+                logger.info(f"  extract {key}")
+                local_clean_content =  self.cache_clean.read(key)
+
+                attributes = {
+                    "title": key,
+                    "source": f"http://covid19-api.exemplartech.com/source/{key}",
+                    "raw": f"http://covid19-api.exemplartech.com/raw/{key}",
+                    "clean": f"http://covid19-api.exemplartech.com/clean/{key}"
+                }
+
+                local_extract_content = self.html_extracter.extract(local_clean_content, attributes)
+                self.cache_extract.write(key, local_extract_content)
 
 
     def _main_loop(self, change_list: ChangeList) -> Dict[str, str]:
@@ -144,6 +172,17 @@ class PageScanner():
             s = s[idx:eidx]
             s =  urllib.parse.unquote_plus(s)
             return s
+
+        def remove_duplicate_if_exists(state: str, other_state: str):
+            key = state + ".html"
+
+            self.cache_raw.remove(key)
+            self.cache_clean.remove(key)
+            change_list.record_duplicate(key, f"duplicate of {other_state}")
+
+            if self.options.capture_image:
+                c = self.get_capture()
+                c.remove(state)
 
         def fetch_if_changed(state: str, xurl: str, skip: bool = False) -> bool:
 
@@ -178,17 +217,17 @@ class PageScanner():
                 change_list.record_failed(state, xurl, f"HTTP status {status}")
                 return False
 
-            local_clean_content =  self.cache_clean.load(key)
-            remote_clean_content = self.html_cleaner.Clean(remote_raw_content)
+            local_clean_content =  self.cache_clean.read(key)
+            remote_clean_content = self.html_cleaner.clean(remote_raw_content)
 
             if local_clean_content != remote_clean_content:
-                self.cache_raw.save(remote_raw_content, key)
-                self.cache_clean.save(remote_clean_content, key)
+                self.cache_raw.write(key, remote_raw_content)
+                self.cache_clean.write(key, remote_clean_content)
                 change_list.record_changed(key, xurl)
 
                 if self.options.capture_image:
                     c = self.get_capture()
-                    c.screenshot(state, state, xurl)
+                    c.screenshot(key, f"Screenshot for {state}", xurl)
             else:
                 change_list.record_unchanged(key, xurl)
                 return False
@@ -216,8 +255,11 @@ class PageScanner():
 
             fetch_if_changed(state, general_url, skip=skip)
             if data_url != None:
-                fetch_if_changed(state + "_data", data_url, skip=skip)
-
+                if general_url == data_url:
+                    remove_duplicate_if_exists(state + "_data", state)
+                else:
+                    fetch_if_changed(state + "_data", data_url, skip=skip)
+            
 
 
 def main(args_list=None):

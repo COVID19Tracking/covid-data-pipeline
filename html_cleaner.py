@@ -160,7 +160,7 @@ class HtmlCleaner:
         self.clean_attributes(elem)
 
 
-    def Clean(self, content: Union[bytes,str]) -> bytes:
+    def clean(self, content: Union[bytes,str]) -> bytes:
         " Remove all layout/display informattion from HTML "
         
         if self.trace: logger.info(f"input ===>\n{content}<===\n")
