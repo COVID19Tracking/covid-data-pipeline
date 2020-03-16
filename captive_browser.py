@@ -34,8 +34,7 @@ class CaptiveBrowser:
         # setup:
         #   1. install firefox
         #   2. install geckodriver: https://github.com/mozilla/geckodriver/releases
-        #   3. [windows] install V++ runtime libs
-        #
+        #   3. [windows] install V++ runtime libs: https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 
         # use FireFox. Chrome is jittery
         options = webdriver.FirefoxOptions()
