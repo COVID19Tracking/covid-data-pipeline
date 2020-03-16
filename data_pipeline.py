@@ -97,11 +97,11 @@ class DataPipeline():
             logger.info(f"  [in-memory content cache took {self.url_manager.size*1e-6:.1f} MBs")
             logger.info(f"run finished on {host} at {self.change_list.start_date.isoformat()}")
             
-    def clean_html(self):
-        # -- rebuild clean files (if necessary)
+    def clean_html(self, rerun=False):
+        " generate clean files from existing raw html "
         is_first = False
         for key in self.cache_raw.list_html_files():
-            if not self.cache_clean.exists(key):
+            if rerun or not self.cache_clean.exists(key):
                 if is_first:
                     logger.info(f"clean existing files...")
                     is_first = False
@@ -111,11 +111,11 @@ class DataPipeline():
                 self.cache_clean.write(key, local_clean_content)
 
 
-    def extract_html(self):
-        # -- rebuild extract files (if necessary)
+    def extract_html(self, rerun=False):
+        " generate extract files from existing clean html "
         is_first = False
         for key in self.cache_clean.list_html_files():
-            if not self.cache_extract.exists(key):
+            if rerun or not self.cache_extract.exists(key):
                 if is_first:
                     logger.info(f"extract existing files...")
                     is_first = False

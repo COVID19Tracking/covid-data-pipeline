@@ -132,6 +132,14 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
     finally:
         if capture: capture.close()
 
+
+def run_once(scanner: DataPipeline):
+    scanner.process()
+    if args.auto_push:
+        host = get_host()
+        git_push(scanner.config.base_dir, f"{scanner.change_list.start_date.isoformat()} on {host}")
+
+
 def main(args_list=None):
 
     if args_list is None:
@@ -155,17 +163,16 @@ def main(args_list=None):
     capture = init_specialized_capture(args)
 
     if args.clean_html or args.extract_html:
-        if args.clean_html:
-            scanner.clean_html()
-        if args.extract_html:
-            scanner.extract_html()
+        if args.clean_html: scanner.clean_html(rerun=True)
+        if args.extract_html: scanner.extract_html(rerun=True)
     elif args.continuous:
+        scanner.clean_html()
+        scanner.extract_html()
         run_continuous(scanner, capture, auto_push = args.auto_push)  
-    else:
-        scanner.process()
-        if args.auto_push:
-            host = get_host()
-            git_push(scanner.config.base_dir, f"{scanner.change_list.start_date.isoformat()} on {host}")
+    else:        
+        scanner.clean_html()
+        scanner.extract_html()
+        run_once(scanner)
 
 
 if __name__ == "__main__":
