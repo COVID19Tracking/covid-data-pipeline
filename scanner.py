@@ -31,8 +31,9 @@ from html_extracter import HtmlExtracter
 
 from specialized_capture import SpecializedCapture, special_cases
 
-from util import is_bad_content, get_host, github_pull, github_push
-
+from util import is_bad_content, get_host, \
+    git_pull, git_push, \
+    monitor_start, monitor_check
 
 parser = ArgumentParser(
     description=__doc__,
@@ -47,11 +48,13 @@ parser.add_argument(
 parser.add_argument('--trace', dest='trace', action='store_true', default=False,
     help='turn on tracing')
 parser.add_argument('-a', '--auto_push', dest='auto_push', action='store_true', default=False,
-    help='checkin to the git repo at end of run')
+    help='checkin data to the git repo at end of run')
 parser.add_argument('--rerun_now', dest='rerun_now', action='store_true', default=False,
     help='include items that were fetched in the last 15 minutes')
 parser.add_argument('--continuous', dest='continuous', action='store_true', default=False,
     help='Run at 0:05 and 0:35')
+parser.add_argument('--auto_update', dest='auto_update', action='store_true', default=False,
+    help='Pull changes and restart if source has changed')
 parser.add_argument('-i', '--image', dest='capture_image', action='store_true', default=False,
     help='capture image after each change')
 
@@ -125,7 +128,7 @@ class PageScanner():
             logger.info(f"run finished on {host} at {change_list.start_date.isoformat()}")
             
             if self.options.auto_push:
-                github_push(self.base_dir, f"{change_list.start_date.isoformat()} on {host}")
+                git_push(self.base_dir, f"{change_list.start_date.isoformat()} on {host}")
             else:
                 logger.warning("github push is DISABLED")
 
@@ -264,6 +267,8 @@ class PageScanner():
 # ---- 
 def run_continuous(scanner: PageScanner):
 
+    if monitor_check(): return
+
     # temp code to get it running
     capture: SpecializedCapture = None
     if True:
@@ -292,11 +297,14 @@ def run_continuous(scanner: PageScanner):
 
         cnt = 1
         t = next_time()
-        print(f"sleep until {t}")
+
+
 
         while True:
-            time.sleep(15.0)
+            time.sleep(15)
             if datetime.now() < t: continue
+
+            if monitor_check(): break
 
             print("==================================")
             print(f"=== run {cnt} at {t}")
@@ -313,7 +321,7 @@ def run_continuous(scanner: PageScanner):
             print("==================================")
             print("")
             t = next_time()
-            print(f"sleep until {t}")
+            print(f"sleep until {t}")                        
             cnt += 1
     finally:
         capture.close()
@@ -322,6 +330,9 @@ def main(args_list=None):
     if args_list is None:
         args_list = sys.argv[1:]
     args = parser.parse_args(args_list)
+
+    if args.auto_update:
+        return monitor_start("--auto_update")
 
     #main_sheet = "https://docs.google.com/spreadsheets/d/18oVRrHj3c183mHmq3m89_163yuYltLNlOmPerQ18E8w/htmlview?sle=true#"
     

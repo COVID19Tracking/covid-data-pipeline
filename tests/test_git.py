@@ -7,13 +7,14 @@ import os
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 
-from util import github_pull, github_push, github_status
+from util import git_pull, git_push, git_isbehind
 
 def test_status():
 
-    xdir = "C:\\Users\\josh\\Documents\\Code\\COVID19\\covid-tracking"
+    xdir = "C:\\Users\\josh\\Documents\\Code\\COVID19\\\covid-data-pipeline"
 
-    github_status(xdir)
+    x = git_isbehind(xdir)
+    print(f"isbehind = {x}")
 
 
 if __name__ == "__main__":
