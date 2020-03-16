@@ -31,8 +31,13 @@ class CaptiveBrowser:
 
     def __init__(self):
 
+        # setup:
+        #   1. install firefox
+        #   2. install geckodriver: https://github.com/mozilla/geckodriver/releases
+        #   3. [windows] install V++ runtime libs
+        #
+
         # use FireFox. Chrome is jittery
-        # https://github.com/mozilla/geckodriver/releases
         options = webdriver.FirefoxOptions()
         options.add_argument('--headless')
         self.driver = webdriver.Firefox(options=options)
