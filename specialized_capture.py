@@ -6,12 +6,12 @@ from datetime import datetime, timezone
 import numpy as np
 import shutil
 from loguru import logger
-
+import atexit
 
 from captive_browser import CaptiveBrowser, are_images_same
 from directory_cache import DirectoryCache
 
-from util import format_datetime_for_file, get_host, github_push
+from util import format_datetime_for_file, get_host, git_push
 
 class SpecializedCapture():
 
@@ -26,9 +26,12 @@ class SpecializedCapture():
 
         logger.info("  [start captive browser]")
         self.browser = CaptiveBrowser()
+        atexit.register(self.browser.close)
 
     def close(self):
         self.browser.close()
+        atexit.unregister(self.browser.close)
+        self.browser = None
 
     def publish(self):
         if not self.changed: 
@@ -37,7 +40,7 @@ class SpecializedCapture():
             host = get_host()
             dt = datetime.now(timezone.utc)
             msg = f"{dt.isoformat()} on {host} - Specialized Capture"
-            github_push(self.publish_dir, msg)
+            git_push(self.publish_dir, msg)
 
     def remove(self, key: str):
         self.cache.remove(key)
@@ -84,7 +87,7 @@ class SpecializedCapture():
                 if os.path.exists(xpath_prev): os.remove(xpath_prev)
                 if os.path.exists(xpath): os.rename(xpath, xpath_prev)
                 os.rename(xpath_temp, xpath)
-                imageio.imwrite(xpath, buffer_diff, format="png")
+                imageio.imwrite(xpath_diff, buffer_diff, format="png")
         else:
             logger.warning("      image is new")
             os.rename(xpath_temp, xpath)
