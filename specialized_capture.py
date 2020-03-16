@@ -11,7 +11,7 @@ from loguru import logger
 from captive_browser import CaptiveBrowser, are_images_same
 from directory_cache import DirectoryCache
 
-from util import format_datetime_for_file, get_host, save_data_to_github
+from util import format_datetime_for_file, get_host, github_push
 
 class SpecializedCapture():
 
@@ -37,8 +37,7 @@ class SpecializedCapture():
             host = get_host()
             dt = datetime.now(timezone.utc)
             msg = f"{dt.isoformat()} on {host} - Specialized Capture"
-
-            save_data_to_github(self.publish_dir, msg)
+            github_push(self.publish_dir, msg)
 
     def remove(self, key: str):
         self.cache.remove(key)

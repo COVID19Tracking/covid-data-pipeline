@@ -31,7 +31,7 @@ from html_extracter import HtmlExtracter
 
 from specialized_capture import SpecializedCapture, special_cases
 
-from util import is_bad_content, get_host, save_data_to_github
+from util import is_bad_content, get_host, github_pull, github_push
 
 
 parser = ArgumentParser(
@@ -125,7 +125,7 @@ class PageScanner():
             logger.info(f"run finished on {host} at {change_list.start_date.isoformat()}")
             
             if self.options.auto_push:
-                save_data_to_github(self.base_dir, f"{change_list.start_date.isoformat()} on {host}")
+                github_push(self.base_dir, f"{change_list.start_date.isoformat()} on {host}")
             else:
                 logger.warning("github push is DISABLED")
 

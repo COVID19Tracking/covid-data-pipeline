@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import pytz
 from loguru import logger
 import re
+from typing import Tuple, List
 import subprocess
 
 from requests.packages import urllib3
@@ -56,28 +57,78 @@ def get_host():
     if host == None: host = os.environ.get("COMPUTERNAME")
     return host
 
-def is_code_dir(xdir: str) -> bool:
+# -----
 
+def is_python_code_dir(xdir: str) -> bool:
     python_test_dir = os.path.join(xdir, "__pycache__")
     if os.path.exists(python_test_dir): return True
-
     return False
 
-def save_data_to_github(git_dir: str, commit_msg: str):
-
-    if is_code_dir(git_dir):
-        raise Exception(f"{git_dir} because it looks like a code directory")
+def github_push(git_dir: str, commit_msg: str):
+    """ run git add/commit/push """
 
     wd = os.getcwd()
     os.chdir(git_dir)
     try:
-        logger.info("adding data changes...")
-        subprocess.call(["git", "add", "."])
-        logger.info("commiting data changes...")
-        subprocess.call(["git", "commit", "-m", commit_msg])
+        if not os.path.exists(".git"): raise Exception("Missing .git directory")
+
+        logger.info("committing data changes...")
+        subprocess.call(["git", "commit", "-a", "-m", commit_msg])
         logger.info("pushing data changes...")
         subprocess.call(["git", "push"])
+
+        #logger.info(f"  run: pushd {git_dir} && git commit -a -m \"{commit_msg}\" && git push && popd")
         logger.info("done")
     finally:
         os.chdir(wd)
 
+def github_satus(git_dir: str) -> Tuple[bool, List[str]]:
+    """ run git status """
+
+    def read_output(p):
+        result = []
+        while True:
+            rc = p.poll()
+            if rc != None: break
+            s = p.stdout.readline()
+            if s == b"": continue
+            print(s)
+            result.append(s)
+        if rc != 0:
+            raise Exception(f"return code was {rc}")
+        return result
+
+    wd = os.getcwd()
+    os.chdir(git_dir)
+    try:
+        if not os.path.exists(".git"): raise Exception("Missing .git directory")
+
+        logger.info("get differences")
+        p = subprocess.Popen(["git", "diff", "HEAD", "origin/master"], stdout=subprocess.PIPE)
+        lines = read_output(p)
+
+        if len(lines) == 0:
+            logger.info("git repo has not changed -> return")
+            return False, None
+        #logger.info(f"  run: pushd {git_dir} && git diff HEAD origin/master && popd")
+        logger.info("done")
+        return True, lines
+    finally:
+        os.chdir(wd)
+    
+
+def github_pull(git_dir: str):
+    """ run git pull """
+
+    wd = os.getcwd()
+    os.chdir(git_dir)
+    try:
+        if not os.path.exists(".git"): raise Exception("Missing .git directory")
+
+        logger.info("pull changes...")
+        subprocess.call(["git", "pull"])
+        #logger.info(f"  run: pushd {git_dir} && git pull && popd")
+        logger.info("done")
+    finally:
+        os.chdir(wd)
+    
