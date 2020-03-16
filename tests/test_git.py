@@ -13,7 +13,7 @@ def test_status():
 
     xdir = "C:\\Users\\josh\\Documents\\Code\\COVID19\\covid-tracking"
 
-    has_changed, lines = github_status(xdir)
+    github_status(xdir)
 
 
 if __name__ == "__main__":
