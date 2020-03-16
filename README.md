@@ -1,2 +1,4 @@
 # corona19-data-pipeline
-Scan/Trim/Extra Pipeline for State Coronavirus Site
+
+Scan/Trim/Extract Pipeline for State Coronavirus Site
+
