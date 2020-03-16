@@ -36,8 +36,6 @@ class DataPipelineConfig():
         self.base_dir = base_dir
         self.temp_dir = temp_dir
         self.trace = flags["trace"]
-        self.auto_push = flags["auto_push"]
-        self.auto_update = flags["auto_update"]
         self.capture_image = flags["capture_image"]
         self.rerun_now = flags["rerun_now"]
 
@@ -103,7 +101,7 @@ class DataPipeline():
         # -- rebuild clean files (if necessary)
         is_first = False
         for key in self.cache_raw.list_html_files():
-            if self.config.clean or not self.cache_clean.exists(key):
+            if not self.cache_clean.exists(key):
                 if is_first:
                     logger.info(f"clean existing files...")
                     is_first = False
@@ -117,7 +115,7 @@ class DataPipeline():
         # -- rebuild extract files (if necessary)
         is_first = False
         for key in self.cache_clean.list_html_files():
-            if self.config.extract or not self.cache_extract.exists(key):
+            if not self.cache_extract.exists(key):
                 if is_first:
                     logger.info(f"extract existing files...")
                     is_first = False
@@ -198,8 +196,6 @@ class DataPipeline():
             else:
                 change_list.record_unchanged(key, source, xurl)
                 return False
-
-        self.clean_html()
 
         # -- get states info from API
         url_sources = get_available_sources()

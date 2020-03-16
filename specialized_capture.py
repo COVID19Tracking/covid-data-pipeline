@@ -23,15 +23,21 @@ class SpecializedCapture():
         self.cache = DirectoryCache(os.path.join(publish_dir))
 
         self.changed = False
+        self._browser: CaptiveBrowser = None
+
+    def get_browser(self) -> CaptiveBrowser:
+        if self._browser != None: return self._browser
 
         logger.info("  [start captive browser]")
-        self.browser = CaptiveBrowser()
-        atexit.register(self.browser.close)
+        self._browser = CaptiveBrowser()
+        atexit.register(self._browser.close)
 
     def close(self):
-        self.browser.close()
-        atexit.unregister(self.browser.close)
-        self.browser = None
+        if self._browser:
+            logger.info("  [stop captive browser]")
+            self._browser.close()
+            atexit.unregister(self._browser.close)
+            self._browser = None
 
     def publish(self):
         if not self.changed: 
@@ -63,14 +69,16 @@ class SpecializedCapture():
         xpath_prev = os.path.join(self.temp_dir,  f"{key}_prev.png")
         xpath_diff = os.path.join(self.temp_dir,  f"{key}_diff.png")
 
+        browser = self.get_browser()
+
         logger.info(f"    1. get content from {url}")
-        self.browser.get(url)
+        browser.get(url)
         
         logger.info(f"    2. wait for 5 seconds")
         time.sleep(5)
 
         logger.info(f"    3. save screenshot to {xpath}")
-        buffer_new = self.browser.screenshot(xpath_temp)        
+        buffer_new = browser.screenshot(xpath_temp)        
         if buffer_new is None:
             logger.error("      *** could not capture image")
             return

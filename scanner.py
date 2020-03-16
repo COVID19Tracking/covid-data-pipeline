@@ -50,10 +50,12 @@ parser.add_argument('--guarded', dest='guarded', action='store_true', default=Fa
 
 # data dir args
 config = configparser.ConfigParser()
-if os.path.exists("pipeline.local.ini"):
-    config.read('pipeline.local.ini')
+if os.path.exists("data_pipeline.local.ini"):
+    config.read('data_pipeline.local.ini')
+elif os.path.exists("data_pipeline.ini"):
+    config.read('data_pipeline.ini')
 else:
-    config.read('pipeline.ini')
+    raise Exception("Missing data_pipeline.ini file")
 
 parser.add_argument(
     '--base_dir',
