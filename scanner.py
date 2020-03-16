@@ -57,6 +57,7 @@ parser.add_argument('--auto_update', dest='auto_update', action='store_true', de
     help='Pull changes and restart if source has changed')
 parser.add_argument('-i', '--image', dest='capture_image', action='store_true', default=False,
     help='capture image after each change')
+parser.add_argument('--guarded', dest='guarded', action='store_true', default=False)
 
 # data dir args
 
@@ -299,7 +300,7 @@ def run_continuous(scanner: PageScanner):
         t = next_time()
 
 
-
+        print(f"sleep until {t}")
         while True:
             time.sleep(15)
             if datetime.now() < t: continue
