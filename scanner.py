@@ -7,6 +7,8 @@ files are only updated if the cleaned version changes
 """
 
 from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
+import configparser
+
 import sys
 import os
 from datetime import datetime, timezone, timedelta
@@ -47,15 +49,20 @@ parser.add_argument('-i', '--image', dest='capture_image', action='store_true', 
 parser.add_argument('--guarded', dest='guarded', action='store_true', default=False)
 
 # data dir args
+config = configparser.ConfigParser()
+if os.path.exists("pipeline.local.ini"):
+    config.read('pipeline.local.ini')
+else:
+    config.read('pipeline.ini')
 
 parser.add_argument(
     '--base_dir',
-    default='C:\\data\\corona19-data-archive',
+    default=config["DIRS"]["base_dir"],
     help='Local GitHub repo dir for corona19-data-archive')
 
 parser.add_argument(
     '--temp_dir',
-    default='"c:\\temp\\public-cache"',
+    default=config["DIRS"]["temp_dir"],
     help='Local temp dir for snapshots')
 
 
@@ -124,6 +131,7 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
         if capture: capture.close()
 
 def main(args_list=None):
+
     if args_list is None:
         args_list = sys.argv[1:]
     args = parser.parse_args(args_list)
