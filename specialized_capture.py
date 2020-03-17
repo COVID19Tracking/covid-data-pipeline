@@ -31,6 +31,7 @@ class SpecializedCapture():
         logger.info("  [start captive browser]")
         self._browser = CaptiveBrowser()
         atexit.register(self._browser.close)
+        return self._browser
 
     def close(self):
         if self._browser:
@@ -70,6 +71,7 @@ class SpecializedCapture():
         xpath_diff = os.path.join(self.temp_dir,  f"{key}_diff.png")
 
         browser = self.get_browser()
+        if browser == None: raise Exception("Could not get browser")
 
         logger.info(f"    1. get content from {url}")
         browser.get(url)

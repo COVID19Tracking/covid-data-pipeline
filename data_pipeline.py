@@ -113,6 +113,10 @@ class DataPipeline():
 
     def extract_html(self, rerun=False):
         " generate extract files from existing clean html "
+
+        self.change_list = ChangeList(self.cache_raw)                
+        self.change_list.load()
+
         is_first = False
         for key in self.cache_clean.list_html_files():
             if key == "index.html": continue
@@ -125,6 +129,9 @@ class DataPipeline():
                 local_clean_content =  self.cache_clean.read(key)
 
                 item = self.change_list.get_item(key)
+                if item == None:
+                    logger.warning("   skip because it is a new item")
+                    continue
 
                 extracter = HtmlExtracter()
                 local_extract_content = extracter.extract(local_clean_content, item)

@@ -94,7 +94,10 @@ class ChangeList:
 
         self._items = []
         self._lookup = {}
-        
+
+    def load(self):
+        self._read_json()
+
     def start_run(self):
         self._read_json()
 
@@ -125,7 +128,7 @@ class ChangeList:
 
     def get_item(self, name: str) -> ChangeItem:
         idx = self._lookup.get(name)
-        if idx < 0: return None
+        if idx == None: return None
         return self._items[idx]
 
     def get_minutes_since_last_check(self, name: str) -> float:
@@ -477,7 +480,11 @@ class ChangeList:
         fn = os.path.join(self.cache.work_dir, "change_list.json")
 
         self._items = []
-        if not os.path.exists(fn): return
+        if not os.path.exists(fn):
+            logger.warning(f"could not load {fn}") 
+            return
+
+        logger.info(f"read {fn}") 
 
         with open(fn, "r") as f_changes:
             result = json.load(f_changes)
@@ -492,9 +499,12 @@ class ChangeList:
 
         self._items = [ChangeItem(x) for x in result["items"]]
 
+        logger.info(f"  found {len(self._items)} items") 
+
         self._lookup = { }
         for idx in range(len(self._items)): 
             n = self._items[idx].name
+            logger.debug(f"{n} {idx}")
             self._lookup[n] = idx
 
     def _write_urls(self):
