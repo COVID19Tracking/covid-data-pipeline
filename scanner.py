@@ -152,8 +152,6 @@ def main(args_list=None):
     if not args.auto_push:
         logger.warning("github push is DISABLED")
 
-    #main_sheet = "https://docs.google.com/spreadsheets/d/18oVRrHj3c183mHmq3m89_163yuYltLNlOmPerQ18E8w/htmlview?sle=true#"
-    
     config = DataPipelineConfig(args.base_dir, args.temp_dir, flags = {
         "trace": args.trace,
         "capture_image": args.capture_image,

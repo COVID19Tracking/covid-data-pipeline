@@ -79,9 +79,14 @@ def parse_google_csv(content: bytes) -> pd.DataFrame:
     df = pd.read_csv(io.StringIO(content.decode('utf-8')))
     #print(f"df = \n{df}")
 
-    df["location"] = df["state"]
-    df["main_page"] = df["covid19Site"].apply(clean_google_url) 
-    df["data_page"] = df["dataSite"].apply(clean_google_url) 
+    try:
+        df["location"] = df["state"]
+        df["main_page"] = df["covid19Site"].apply(clean_google_url) 
+        df["data_page"] = df["dataSite"].apply(clean_google_url) 
+    except:
+        logger.info("source changed")
+        logger.info(f"df = \n{df}")
+        raise Exception("google csv changed")
 
     return df
 
@@ -113,7 +118,13 @@ def parse_urlwatch(content: bytes) -> pd.DataFrame:
     #print(f"df = \n{df}")
     exit(-1)
     
+    
+
+
 def get_available_sources():
+
+    #main_sheet = "https://docs.google.com/spreadsheets/d/18oVRrHj3c183mHmq3m89_163yuYltLNlOmPerQ18E8w/htmlview?sle=true#"
+
     return [
         UrlSource("google-states", "https://covid.cape.io/states/info.csv", parse_google_csv, display_dups=True),
         UrlSource("urlwatch", "https://covidtracking.com/api/urls", parse_urlwatch, display_dups=False)

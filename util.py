@@ -58,6 +58,22 @@ def format_datetime_for_filename(dt: datetime) -> str:
 
 eastern_time_zone = pytz.timezone("US/Eastern")
 
+def convert_naive_to_utc_datetime(dt: datetime) -> datetime:
+    if dt == None: return None
+    if dt.tzinfo != pytz.UTC: 
+        return dt.astimezone(pytz.UTC)
+    return dt
+
+def require_utc_date(dt: datetime) -> datetime:
+    if dt == None: return None
+    if dt.tzinfo != pytz.UTC: 
+        raise Exception(f"date ({dt}, dt.tzname={dt.tzname()}) is not UTC")
+    return dt
+
+def datetime_utcnow_with_tz() -> datetime:
+    xnow = datetime.utcnow().astimezone(pytz.UTC)
+    return xnow
+
 def format_datetime_for_log(dt: datetime) -> str:
     if dt == None: return "[none]"
     if type(dt) == str:
@@ -102,7 +118,10 @@ def convert_json_to_python(x):
         pass
     elif type(x) == str:
         if is_isoformated_str(x):
-            x = datetime.fromisoformat(x)
+            x = datetime.fromisoformat(x).astimezone(pytz.UTC)
+            require_utc_date(x)
+    elif type(x) == datetime:
+        x = convert_naive_to_utc_datetime(x)
     elif type(x) == float:
         pass
     elif type(x) == int:

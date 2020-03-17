@@ -7,7 +7,7 @@ from lxml import html
 
 from directory_cache import DirectoryCache
 
-from util import format_datetime_for_display, format_datetime_difference, \
+from util import format_datetime_for_display, format_datetime_difference, require_utc_date, datetime_utcnow_with_tz, \
     convert_json_to_python, convert_python_to_json
 import html_helpers
 
@@ -39,7 +39,10 @@ class ChangeItem:
     def to_dict(self) -> Dict:
         y = { "name": self.name, "source": self.source, "status": self.status, 
             "url": self.url, "msg": self.msg, "complete": self.complete,
-            "added": self.added, "checked": self.checked, "updated": self.updated, "failed": self.failed 
+            "added": require_utc_date(self.added), 
+            "checked": require_utc_date(self.checked), 
+            "updated": require_utc_date(self.updated), 
+            "failed": require_utc_date(self.failed) 
         }
         return y
 
@@ -55,10 +58,10 @@ class ChangeItem:
         self.msg = y["msg"]
         self.complete = y["complete"]
                 
-        self.added = y["added"]
-        self.checked = y["checked"]
-        self.updated = y["updated"]
-        self.failed = y["failed"]
+        self.added = require_utc_date(y["added"])
+        self.checked = require_utc_date(y["checked"])
+        self.updated = require_utc_date(y["updated"])
+        self.failed = require_utc_date(y["failed"])
 
 
 class ChangeList:
@@ -83,7 +86,7 @@ class ChangeList:
     def __init__(self, cache: DirectoryCache):
         self.cache = cache
 
-        self.start_date = datetime.utcnow()
+        self.start_date = datetime_utcnow_with_tz()
         self.end_date = self.start_date
         self.previous_date = self.start_date
         self.time_lapsed = self.end_date - self.start_date
@@ -102,7 +105,7 @@ class ChangeList:
         self._read_json()
 
         self.previous_date = self.start_date
-        self.start_date = datetime.utcnow()
+        self.start_date = datetime_utcnow_with_tz()
         self.end_date = self.start_date
         self.time_lapsed = self.end_date - self.start_date
         
@@ -112,7 +115,7 @@ class ChangeList:
 
 
     def save_progress(self):
-        self.end_date = datetime.utcnow()
+        self.end_date = datetime_utcnow_with_tz()
         self.time_lapsed = self.end_date - self.start_date
 
         self._write_json()
@@ -138,7 +141,7 @@ class ChangeList:
         if idx == None: return 100000.0
 
         x = self._items[idx]
-        checked_date = x.checked
+        checked_date = require_utc_date(x.checked)
         if checked_date == None: return 100000.0
         delta = self.start_date - checked_date
 
@@ -146,7 +149,7 @@ class ChangeList:
 
     def update_status(self, name: str, source: str, status: str, xurl: str, msg: str) -> Tuple[ChangeItem, ChangeItem, str]:
         
-        xnow = datetime.utcnow()
+        xnow = datetime_utcnow_with_tz()
 
         if msg == "": msg = None
         idx = self._lookup.get(name)
@@ -504,7 +507,6 @@ class ChangeList:
         self._lookup = { }
         for idx in range(len(self._items)): 
             n = self._items[idx].name
-            logger.debug(f"{n} {idx}")
             self._lookup[n] = idx
 
     def _write_urls(self):
