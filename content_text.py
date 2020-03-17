@@ -17,7 +17,12 @@ class ContentText():
         if elem.tag == "table": return ""        
         if elem.tag == "iframe": return ""        
         #if elem.tag == "div": return ""        
-        if len(self.elem) == 0: return ""
+        if len(self.elem) == 0: 
+            t1 = self.elem.text
+            t3 = self.elem.tail
+            t1 = t1.strip() if t1 != None else ""
+            t3 = t3.strip() if t3 != None else ""
+            return (t1 + " " + t3).strip()
 
         result = ""
         for ch in elem:
