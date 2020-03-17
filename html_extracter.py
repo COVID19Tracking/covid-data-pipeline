@@ -3,9 +3,13 @@ from lxml import html, etree
 import re
 from loguru import logger
 from typing import Tuple
+from datetime import datetime
 
+from change_list import ChangeItem
 from content_table import ContentTable
 from content_text import ContentText, make_content_text
+from util import format_datetime_for_display
+import html_helpers
 
 class HtmlExtracter:
 
@@ -99,16 +103,19 @@ class HtmlExtracter:
         td.tail = ""
         tr.append(td)
         td = html.Element("td")
-        td.text = n
         td.tail = ""
         tr.append(td)
-        if v.startswith("http"):
+        
+        if type(v) == datetime:
+            tr[1].text = format_datetime_for_display(v)
+        elif type(v) == str and v.startswith("http"):
             a = html.Element("a")
             a.attrib["href"] = v
             a.text = v
             a.tail = ""
             tr[1].append(a)
         else:
+            td.text = n
             tr[1].text = v
         return tr
 
@@ -130,26 +137,17 @@ class HtmlExtracter:
             tr.append(td)
         return tr
 
-    def load_info(self, attrib: Dict, body: html.Element):
+    def load_info(self, item: ChangeItem, 
+            body: html.Element):
         
         body.text = "\n    "
         h3 = html.Element("h3")
-        h3.text = attrib["title"] 
+        h3.text = item.name 
         h3.tail = "\n\n    "
         body.append(h3)
 
-        t = html.Element("table")
-        t.attrib["id"] = "info"
-        t.attrib["class"] = "info"
-        t.text = "\n      "
-        t.tail = "\n"
-        body.append(t)
-        for n in attrib:
-            if n == "title": continue
-            v = attrib[n]
-            tr = self.make_info_row(n, v)
-            t.append(tr)
-        t[-1].tail = "\n    "
+        div = html_helpers.make_source_links("extract", item.name, item.source)
+        body.append(div)
 
         body[len(body)-1].tail = "\n    "
         br = html.Element("br")
@@ -227,7 +225,7 @@ class HtmlExtracter:
             self.process_element(ch)
 
 
-    def extract(self, content: Union[bytes,str], info: Dict) -> bytes:
+    def extract(self, content: Union[bytes,str], item: ChangeItem) -> bytes:
         " Get Interesting Content from the HTML and reorganize it "
         
         if self.trace: logger.info(f"input ===>\n{content}<===\n")
@@ -240,13 +238,17 @@ class HtmlExtracter:
         if len(self.link_container):
             self.link_container[-1].tail = "\n    "
 
-        doc_out = html.fromstring("""
+        doc_out = html.fromstring(f"""
 <html>
+  <head>
+    <title>{item.name}</title>
+    <link rel="stylesheet" href="../style.css" type="text/css" />
+  </head
   <body>
   </body>
 <html>
 """)
-        self.load_info(info, doc_out[0])
+        self.load_info(item, doc_out[0])
         doc_out[0].append(self.table_container)
         doc_out[0].append(self.text_container)
         doc_out[0].append(self.link_container)

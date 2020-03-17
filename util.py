@@ -114,7 +114,7 @@ def convert_json_to_python(x):
             v = x[n]
             x[n] = convert_json_to_python(v)
     elif type(x) == list:
-        for i in len(x):
+        for i in range(len(x)):
             v = x[i]
             x[i] = convert_json_to_python(v)
     else:
@@ -128,7 +128,7 @@ def convert_python_to_json(x):
         if is_isoformated_str(x):
             raise Exception("invalid str, content would be converted to datetime on load")
     elif type(x) == datetime:
-        x = x.toisformat()
+        x = x.isoformat()
     elif type(x) == float:
         pass
     elif type(x) == int:
@@ -140,7 +140,7 @@ def convert_python_to_json(x):
             v = x[n]
             x[n] = convert_python_to_json(v)
     elif type(x) == list:
-        for i in len(x):
+        for i in range(len(x)):
             v = x[i]
             x[i] = convert_python_to_json(v)
     else:

@@ -21,6 +21,7 @@ from specialized_capture import SpecializedCapture, special_cases
 
 from util import get_host, \
     git_pull, git_push, \
+    format_datetime_for_display, format_datetime_for_log, \
     monitor_start, monitor_check
 
 # ----------------------

@@ -11,7 +11,7 @@ import atexit
 from captive_browser import CaptiveBrowser, are_images_same
 from directory_cache import DirectoryCache
 
-from util import format_datetime_for_file, format_datetime_for_display, get_host, git_push
+from util import format_datetime_for_filename, format_datetime_for_display, get_host, git_push
 
 class SpecializedCapture():
 
@@ -101,7 +101,7 @@ class SpecializedCapture():
             os.rename(xpath_temp, xpath)
 
         dt = datetime.now(timezone.utc)
-        timestamp = format_datetime_for_file(dt)
+        timestamp = format_datetime_for_filename(dt)
         key_image = key + "_" + timestamp + ".png"
 
         logger.info(f"    4. publish unique image {key_image}")

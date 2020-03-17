@@ -124,15 +124,10 @@ class DataPipeline():
                 logger.info(f"  extract {key}")
                 local_clean_content =  self.cache_clean.read(key)
 
-                attributes = {
-                    "title": key,
-                    "source": f"http://covid19-api.exemplartech.com/source/{key}",
-                    "raw": f"http://covid19-api.exemplartech.com/raw/{key}",
-                    "clean": f"http://covid19-api.exemplartech.com/clean/{key}"
-                }
+                item = self.change_list.get_item(key)
 
                 extracter = HtmlExtracter()
-                local_extract_content = extracter.extract(local_clean_content, attributes)
+                local_extract_content = extracter.extract(local_clean_content, item)
                 self.cache_extract.write(key, local_extract_content)
 
 
@@ -164,7 +159,7 @@ class DataPipeline():
                     logger.info(f"{key}: checked {mins:.1f} mins ago")
                 else:
                     logger.info(f"{key}: checked {mins:.1f} mins ago -> skip b/c < 15 mins")
-                    change_list.temporary_skip(key, xurl, "age < 15 mins")
+                    change_list.temporary_skip(key, source, xurl, "age < 15 mins")
                     return False
 
             if skip:
@@ -195,15 +190,11 @@ class DataPipeline():
                 self.cache_clean.write(key, remote_clean_content)
                 change_list.record_changed(key, source, xurl)
 
-                attributes = {
-                    "title": f"Data for {location} (source={source})",
-                    "source": xurl,
-                    "raw": f"http://covid19-api.exemplartech.com/raw/{key}",
-                    "clean": f"http://covid19-api.exemplartech.com/clean/{key}",
-                    "changed_at": change_list.last_timestamp                    
-                }
+
+                item = change_list.get_item(key)
+
                 extracter = HtmlExtracter()
-                remote_extract_content = extracter.extract(remote_clean_content, attributes)
+                remote_extract_content = extracter.extract(remote_clean_content, item)
                 self.cache_extract.write(key, remote_extract_content)
 
 

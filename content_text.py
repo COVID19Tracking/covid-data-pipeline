@@ -7,16 +7,16 @@ class ContentText():
 
     def __init__(self, elem: html.Element, text: str, tail: str):
         self.elem = elem
+
         self.text = text
         self.tail = tail
-
         self.child_text = self.__extract_child(elem)
 
     def __extract_child(self, elem: html.Element) -> str:
 
         if elem.tag == "table": return ""        
         if elem.tag == "iframe": return ""        
-        if elem.tag == "div": return ""        
+        #if elem.tag == "div": return ""        
         if len(self.elem) == 0: return ""
 
         result = ""

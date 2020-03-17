@@ -5,10 +5,61 @@ from typing import Dict, Tuple, List
 from datetime import datetime
 from lxml import html
 
+from directory_cache import DirectoryCache
+
 from util import format_datetime_for_display, format_datetime_difference, \
     convert_json_to_python, convert_python_to_json
+import html_helpers
 
-from directory_cache import DirectoryCache
+class ChangeItem:
+    " status data about a link "
+
+    __slots__ = (
+        "name", "source", "status", "url", 
+        "msg", "complete",
+        "added", "checked", "updated", "failed"
+    )
+
+    def __init__(self, vals: Dict = None):
+        self.name = ""
+        self.source = ""
+        self.status =  ""
+        self.url = ""
+        self.msg = ""
+        self.complete = False,
+                
+        self.added:datetime = None
+        self.checked:datetime = None
+        self.updated:datetime = None
+        self.failed:datetime = None
+
+        if vals != None:
+            self.from_dict(vals)
+
+    def to_dict(self) -> Dict:
+        y = { "name": self.name, "source": self.source, "status": self.status, 
+            "url": self.url, "msg": self.msg, "complete": self.complete,
+            "added": self.added, "checked": self.checked, "updated": self.updated, "failed": self.failed 
+        }
+        return y
+
+    def copy(self):
+        x = self.to_dict()
+        return ChangeItem(x)
+
+    def from_dict(self, y: Dict):
+        self.name = y["name"]
+        self.source = y.get("source")
+        self.status =  y["status"]
+        self.url = y["url"]
+        self.msg = y["msg"]
+        self.complete = y["complete"]
+                
+        self.added = y["added"]
+        self.checked = y["checked"]
+        self.updated = y["updated"]
+        self.failed = y["failed"]
+
 
 class ChangeList:
     """ maintains a list of changes for a run """
@@ -54,7 +105,7 @@ class ChangeList:
         
         self.error_message = None
         self.complete = False
-        for x in self._items: x["complete"] = False
+        for x in self._items: x.complete = False
 
 
     def save_progress(self):
@@ -72,6 +123,11 @@ class ChangeList:
         self.complete = True
         self.save_progress()
 
+    def get_item(self, name: str) -> ChangeItem:
+        idx = self._lookup.get(name)
+        if idx < 0: return None
+        return self._items[idx]
+
     def get_minutes_since_last_check(self, name: str) -> float:
         " get time since last check in minutes "
         
@@ -79,32 +135,32 @@ class ChangeList:
         if idx == None: return 100000.0
 
         x = self._items[idx]
-        checked_date = x["checked"]
+        checked_date = x.checked
         if checked_date == None: return 100000.0
         delta = self.start_date - checked_date
 
         return delta.total_seconds() / 60.0
 
-    def update_status(self, name: str, source: str, status: str, xurl: str, msg: str) -> Tuple[Dict, Dict, str]:
+    def update_status(self, name: str, source: str, status: str, xurl: str, msg: str) -> Tuple[ChangeItem, ChangeItem, str]:
         
         xnow = datetime.utcnow()
 
         if msg == "": msg = None
         idx = self._lookup.get(name)
         if idx == None:         
-            x = None   
-            y = { "name": name, "source": source, "status": status, "url": xurl, "msg": msg, "complete": True,
-                  "added": xnow, "checked": None, "updated": None, "failed": None }
+            x = None               
+            y = ChangeItem({ "name": name, "source": source, "status": status, "url": xurl, "msg": msg, "complete": True,
+                  "added": xnow, "checked": None, "updated": None, "failed": None })
             self._lookup[name] = len(self._items)
             self._items.append(y)
         else:
             x = self._items[idx]
             y = x.copy()
-            y["status"] = status
-            y["source"] = source
-            y["url"] = xurl
-            y["msg"] = msg
-            y["complete"] = True
+            y.status = status
+            y.source = source
+            y.url = xurl
+            y.msg = msg
+            y.complete = True
             self._items[idx] = y
             
         return y, x, xnow
@@ -116,8 +172,8 @@ class ChangeList:
         logger.error(f"     {name}: url={xurl} msg={msg}")
 
         y, x, xnow = self.update_status(name, source, status, xurl, msg)
-        if x != None and x["status"] != "FAILED":
-            y["failed"] = xnow
+        if x != None and x.status != "FAILED":
+            y.failed = xnow
 
 
     def record_unchanged(self, name: str, source: str, xurl: str, msg: str = ""):
@@ -126,8 +182,8 @@ class ChangeList:
         logger.info(f"  {name}: {status}")
 
         y, _, xnow = self.update_status(name, source, status, xurl, msg)
-        y["checked"] = xnow
-        y["failed"] = None
+        y.checked = xnow
+        y.failed = None
 
     def record_skip(self, name: str, source: str, xurl: str, msg: str = ""):
 
@@ -150,9 +206,8 @@ class ChangeList:
 
         y, x, _ = self.update_status(name, source, status, xurl, msg)
         if x != None:
-            y["status"] = x["status"]
-            y["msg"] = x["msg"]
-
+            y.status = x.status
+            y.msg = x.msg
 
     def record_changed(self, name: str, source: str, xurl: str, msg: str = ""):
 
@@ -160,10 +215,9 @@ class ChangeList:
         logger.warning(f"    {name}: {status}")
 
         y, _, xnow = self.update_status(name, source, status, xurl, msg)
-        y["checked"] = xnow
-        y["updated"] = xnow
-        y["failed"] = None
-
+        y.checked = xnow
+        y.updated = xnow
+        y.failed = None
 
         self.last_timestamp = xnow
 
@@ -179,11 +233,10 @@ class ChangeList:
             f.write(f"====== {status} ======\n")
             for i in range(len(self._items)):
                 x = self._items[i]
-                name, source, status, xurl, msg = x["name"], x.get("source"), x["status"], x["url"], x["msg"]
-                if source == None: source = ""
-                if msg == None: msg = ""
+                if x.source == None: x.source = ""
+                if x.msg == None: x.msg = ""
                 if s != status: continue
-                f.write(f"{name}\t{status}\t{source}\t{xurl}\t{msg}\n")
+                f.write(f"{x.name}\t{x.status}\t{x.source}\t{x.url}\t{x.msg}\n")
             f.write(f"\n")
 
         with open(fn, "w") as f_changes:
@@ -196,7 +249,7 @@ class ChangeList:
 
             status = {}
             for x in self._items:
-                s = x["status"]
+                s = x.status
                 cnt = status.get(s)
                 if cnt == None: cnt = 0
                 status[s] = cnt + 1
@@ -240,38 +293,8 @@ class ChangeList:
             "err" if self.error_message else None)
         t[-1].tail = "\n    "
 
-    def _make_source_link(self, kind: str, stage: str, name: str) -> html.Element:
-        d = html.Element("div")
-        if kind == stage:
-            a = html.Element("a")
-            # "http://covid19-api.exemplartech.com/github-data/raw/AZ.html
-            a.href = f"../{stage}/{name}"
-            a.text = stage
-            d.append(a)
-        else:
-            d.text = stage
-        d.tail = " => "        
-        return d
 
-    def _make_source_links(self, kind: str, name: str, source: str):
-
-        div = html.Element("div")
-        div.attrib["class"] = "source"
-                
-        kind = kind.lower()
-        d = self._make_source_link(kind, "extract", name)
-        div.append(d)
-        d = self._make_source_link(kind, "clean", name)
-        div.append(d)
-        d = self._make_source_link(kind, "raw", name)
-        div.append(d)
-        d = self._make_source_link(kind, source, name)
-        div.append(d)
-
-        return div        
-
-
-    def _add_data_row(self, t: html.Element, x: Dict, kind: str):
+    def _add_data_row(self, t: html.Element, x: ChangeItem, kind: str):
 
     # {
     #   "name": "AK.html",
@@ -285,66 +308,80 @@ class ChangeList:
     #   "failed": null,
     #   "source": "google-states"
     # }
+
+        name = x.name
+        status = x.status
+
+        if name == "main_sheet.html": return
+        if name.endswith("_data.html") and status == "duplicate": return
+
         prefix = "\n      "
 
         tr = html.Element("tr")
         tr.tail = prefix
 
         # Name
-        name = x["name"]
         td = html.Element("td")
         td.tail = prefix
         a = html.Element("a")
         a.attrib["href"] = name
-        a.attrib["target"] = "_blank"
         a.text = name.replace(".html", "")
         td.append(a)
         tr.append(td)
         t.append(tr)
 
         # Status
-        status = x["status"]
-        err_msg =x["failed"]
-
         td = html.Element("td")
         td.tail = prefix
         td.attrib["class"] = status
         td.text = status
-        if err_msg != None:
-            td.attrib["tooltip"] = err_msg
         tr.append(td)
 
         # Last Changed
-        updated = x["updated"]
+        updated_at = x.updated
+        failed_at = x.failed
         td = html.Element("td")
         td.tail = prefix
-        td.text = format_datetime_for_display(updated)
+        if failed_at != None:
+            td.attrib["class"] = "failed"
+            td.text = format_datetime_for_display(failed_at)
+        else:
+            td.text = format_datetime_for_display(updated_at)
         tr.append(td)
 
         # Delta
         td = html.Element("td")
         td.tail = prefix
-        td.text = format_time_difference(self.start_date, updated) if status != "CHANGED" else ""
+
+        v = updated_at if failed_at == None else failed_at
+        td.text = format_datetime_difference(self.start_date, v) if status != "CHANGED" else ""
         tr.append(td)
         t.append(tr)
 
         # Live Page
-        url = x["url"]
+        url = x.url
         td = html.Element("td")
         td.tail = prefix
         a = html.Element("a")
         a.attrib["href"] = url
-        a.attrib["target"] = "_blank"
-        a.text = url
+        if len(url) < 80:
+            a.text = url
+        else:
+            a.text = url[0: 80] + " ..."
+            a.attrib["class"] = "tooltip"
+            s = html.Element("span")
+            s.text = url
+            s.attrib["class"] = "tooltiptext"
+            a.append(s)
         td.append(a)
         tr.append(td)
 
         # Pipeline        
-        source = x.get("source")
+        source = x.source
         if source == None: source = "google-states"
         td = html.Element("td")
         td.tail = prefix[:-2]
-        div = self._make_source_links(kind, name, source)
+        div = html_helpers.make_source_links(kind, name, source)
         td.append(div)
         tr.append(td)
 
@@ -367,12 +404,12 @@ class ChangeList:
 <html>
   <head>
         <title>{title}</title>
-        <link rel="stylesheet" href="epydoc.css" type="text/css" />
+        <link rel="stylesheet" href="../style.css" type="text/css" />
   </head>
   <body>
     <h3>{title}</h3>
     <table id="data" class="data-table">
-        <tr><th>Name</th><th>Status</th><th>Changed At</th><th>Delta<th/><th>Live Page</th><th>Pipeline</th></tr>    
+        <tr><th>Name</th><th>Status</th><th>Changed At</th><th>Delta</th><th>Source</th><th>Pipeline</th></tr>    
     </table>
     <br>
     <hr>
@@ -404,7 +441,7 @@ class ChangeList:
         result["complete"] = self.complete 
         result["error_message"] = self.error_message 
 
-        result["items"] = [x for x in self._items] 
+        result["items"] = [ x.to_dict() for x in self._items ] 
 
         convert_python_to_json(result)
         return result
@@ -453,11 +490,11 @@ class ChangeList:
         self.time_lapsed = self.end_date - self.start_date
         self.error_message = result["error_message"] 
 
-        self._items = result["items"]
+        self._items = [ChangeItem(x) for x in result["items"]]
 
         self._lookup = { }
         for idx in range(len(self._items)): 
-            n = self._items[idx]["name"]
+            n = self._items[idx].name
             self._lookup[n] = idx
 
     def _write_urls(self):
@@ -465,7 +502,7 @@ class ChangeList:
         with open(fn, "w") as furl:
             furl.write("Name\tUrl\n")
             for x in self._items:
-                name, xurl = x["name"], x["url"]
+                name, xurl = x.name, x.url
                 furl.write(f"{name}\t{xurl}\n")
 
 

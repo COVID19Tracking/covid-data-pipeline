@@ -66,7 +66,7 @@ class ContentTable():
             if x.tag == "td":
                 logger.warning(f"misplaced TD: {html.tostring(x)}")
                 tr_temp.append(x)
-                pass
+                continue
                 #self._extract_td(x) 
             elif len(tr_temp) > 0:
                 self._extract_tr(tr_temp)
