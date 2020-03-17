@@ -29,21 +29,68 @@ parser.add_argument(
     default='covid-data-archive',
     help='S3 bucket name')
 
+parser.add_argument('--states',
+    default='',
+    help='Comma-separated list of state 2-letter names. If present, will only screenshot those.')
+
 parser.add_argument('--push-to-s3', dest='push_to_s3', action='store_true', default=False,
-    help='push screenshots to S3')
+    help='Push screenshots to S3')
+
+parser.add_argument('--replace-most-recent-snapshot', action='store_true', default=False,
+    help='If true, will first delete the most recent snapshot for the state before saving ' 
+         'new screenshot to S3')
+
+
+_STATES_LARGER_WINDOWS = ['DE', 'IN', 'MA', 'NC', 'OK']
 
 
 class S3Backup():
 
-    def __init__(self, bucket: str):
+    def __init__(self, bucket_name: str):
         self.s3 = boto3.resource('s3')
-        self.bucket = bucket
+        self.bucket_name = bucket_name
+        self.bucket = self.s3.Bucket(self.bucket_name)
 
     # for now just uploads image (PNG) file with specified name
     def upload_file(self, local_path: str, s3_path: str):
         self.s3.meta.client.upload_file(
-            local_path, self.bucket, s3_path,
+            local_path, self.bucket_name, s3_path,
             ExtraArgs={'ContentType': 'image/png'})
+
+    def delete_most_recent_snapshot(self, state: str):
+        state_file_keys = [file.key for file in self.bucket.objects.all() if state in file.key]
+        most_recent_state_key = sorted(state_file_keys, reverse=True)[0]
+        self.s3.Object(self.bucket_name, most_recent_state_key).delete()
+
+
+def screenshot(state, data_url, args, s3, browser):
+    logger.info(f"Screenshotting {state} from {data_url}")
+
+    timestamp = datetime.now(timezone('US/Eastern')).strftime("%Y%m%d-%H%M%S")
+    filename =  "%s-%s.png" % (state, timestamp)
+    local_path = os.path.join(args.temp_dir, filename)
+
+    try:
+        logger.info(f"    1. get content from {data_url}")
+        browser.get(data_url)
+    except Exception as exc:
+        logger.error(f"    Failed to load {state}! Not screenshotting.")
+        raise exc
+    
+    logger.info(f"    2. wait for 5 seconds")
+    time.sleep(5)
+
+    logger.info(f"    3. save screenshot to {local_path}")
+    browser.screenshot(local_path)
+
+    if args.push_to_s3:
+        s3_path = os.path.join('state_screenshots', state, filename)
+        if args.replace_most_recent_snapshot:
+            logger.info(f"    3a. first delete the most recent snapshot")
+            s3.delete_most_recent_snapshot(state)
+
+        logger.info(f"    4. push to s3 at {s3_path}")
+        s3.upload_file(local_path, s3_path)
 
 
 def main(args_list=None):
@@ -52,39 +99,45 @@ def main(args_list=None):
     args = parser.parse_args(args_list)
 
     browser = CaptiveBrowser()
-    s3 = S3Backup(bucket=args.s3_bucket)
+    s3 = S3Backup(bucket_name=args.s3_bucket)
 
     # get states info from API
     url_sources = get_available_sources()
     logger.info(f"processing source {url_sources[0].name}")
     state_info_df = url_sources[0].load()
 
-    for idx, r in state_info_df.iterrows():
-        # if idx > 1:
-            # break
-        state = r["state"]
-        data_url = r["data_page"]
+    failed_states = []
 
-        logger.info(f"Screenshotting {state} from {data_url}")
+    def screenshot_with_size_handling(state, data_url):
+        # hack: if state needs to be bigger, capture that too
+        current_size = browser.driver.get_window_size()
+        if state in _STATES_LARGER_WINDOWS:
+            logger.info("temporarily resize browser to capture longer pages")
+            browser.driver.set_window_size(current_size["width"], current_size["height"] * 2)
+        try:
+            screenshot(state, data_url, args, s3, browser)
+        except Exception:
+            failed_states.append(state)
+        finally:
+            logger.info("reset browser to original size")
+            browser.driver.set_window_size(current_size["width"], current_size["height"])
 
-        timestamp = datetime.now(timezone('US/Eastern')).strftime("%Y%m%d-%H%M%S")
-        filename =  "%s-%s.png" % (state, timestamp)
-        local_path = os.path.join(args.temp_dir, filename)
+    if args.states:
+        states = args.states.split(',')
+        for state in states:
+            data_url = state_info_df.loc[state_info_df.state == state].head(1).data_page.values[0]
+            screenshot_with_size_handling(state, data_url)
 
-        logger.info(f"    1. get content from {data_url}")
-        browser.get(data_url)
-        
-        logger.info(f"    2. wait for 5 seconds")
-        time.sleep(5)
+    else:
+        for idx, r in state_info_df.iterrows():
+            # if idx > 1:
+                # break
+            state = r["state"]
+            data_url = r["data_page"]
+            screenshot_with_size_handling(state, data_url)
 
-        logger.info(f"    3. save screenshot to {local_path}")
-        browser.screenshot(local_path)
-
-        if args.push_to_s3:
-            s3_path = os.path.join('state_screenshots', state, filename)
-            logger.info(f"    4. push to s3 at {s3_path}")
-            s3.upload_file(local_path, s3_path)
-
+    if failed_states:
+        logger.error(f"Failed states for this run: {','.join(failed_states)}")
 
 if __name__ == "__main__":
     main()
