@@ -15,12 +15,14 @@ class ContentTable():
     the rows are the text content of the table 
     """
 
-    def __init__(self, element: html.Element):
+    def __init__(self, element: html.Element, fail_on_unexpected_tags = True):
 
         self.orig_element = element
+        self.fail_on_unexpected_tags = fail_on_unexpected_tags 
 
-        self.new_element = html.Element("table")
-        self.new_element.attrib["border"] = "1"
+        self.id = None
+
+        self._new_element = html.Element("table")
         self.caption = ""
         self.rows = []
 
@@ -33,6 +35,10 @@ class ContentTable():
                 if re.search("^[ 0-9,]+$", c): return True
                 if re.search(":[ 0-9,]+,", c): return True
         return False
+
+    def reformat(self) -> html.Element:
+        " get the newly created element "
+        return self._new_element
 
     def _extract_content(self):
         """ 
@@ -48,31 +54,51 @@ class ContentTable():
 
         #print(f"input table ===>{html.tostring(self.orig_element)}<<====\n")            
 
+        self.id = self.orig_element.get("id")
+        if self.id != None:
+            self._new_element.attrib["id"] = self.id
+
+        tr_temp = html.Element("tr")
         for x in self.orig_element:
             #print(f"row ===>{html.tostring(x)}<<====\n")            
+            
+            # -- handle TD that are missing surrounding TR
+            if x.tag == "td":
+                logger.warning(f"misplaced TD: {html.tostring(x)}")
+                tr_temp.append(x)
+                pass
+                #self._extract_td(x) 
+            elif len(tr_temp) > 0:
+                self._extract_tr(tr_temp)
+                tr_temp = html.Element("tr")
+
             if x.tag == "tr":
                 self._extract_tr(x) 
             elif x.tag == "thead" or x.tag == "tbody":
                 for y in x:
                     if y.tag == "tr":
                         self._extract_tr(y) 
-                    else:
+                    elif self.fail_on_unexpected_tags:
                         raise Exception(f"unexpected tag: {y.tag}")
+                    else:
+                        logger.warning(f"unexpected tag in tr: {html.tostring(y)}")
             elif x.tag == "colgroup":
                 # logger.warning(f"colgroup: {html.tostring(x)}")
                 pass
             elif x.tag == "caption":
                 self._extract_caption(x)
-            else:
+            elif self.fail_on_unexpected_tags:
+                logger.warning(f"unexpected tag: {html.tostring(x)}")
                 raise Exception(f"unexpected tag: {x.tag}")
+            else:
+                logger.warning(f"unexpected tag: {html.tostring(x)}")
         
         #print(f"output table ===>{html.tostring(self.new_element)}<<====\n")            
 
     def _extract_caption(self, caption: html.Element):
-        elem, s = self._extract_any(caption)
+        elem, s = self._extract_any(caption)        
         self.caption = s
-        self.new_element.append(elem)
-
+        self._new_element.append(elem)
 
     def _extract_tr(self, tr: html.Element):
         " extract a row "
@@ -80,6 +106,8 @@ class ContentTable():
         #print(f"tr ===>{html.tostring(tr)}<<====\n")            
 
         elem = html.Element("tr")
+        elem.text = ""
+        elem.tail = ""
         cells = []
 
         for x in tr:
@@ -91,10 +119,11 @@ class ContentTable():
                         
             ch_elem, val = self._extract_any(x)
             if ch_elem == None: ch_elem = html.Element(x.tag)
+            ch_elem.tail = ""
             elem.append(ch_elem)
             cells.append(val)
 
-        self.new_element.append(elem)
+        self._new_element.append(elem)
         self.rows.append(cells)
 
     def _extract_any(self, x: html.Element) -> [html.Element, str]:
@@ -128,7 +157,7 @@ class ContentTable():
             if y.tag == etree.Comment: continue
             if y.tag in ["script", "noscript", "br", "hr", "input", "img", "form"]: continue
 
-            if y.tag in ["span", "div", "h3", "h2", "h1", "small", "strong", "em", "sup", "a", "b", "u", "p", "ul", "label"]:
+            if y.tag in ["span", "div", "h3", "h2", "h1", "small", "strong", "em", "sup", "a", "b", "u", "p", "ul", "label", "sub"]:
                 elem_ch, s = self._extract_any(y)
                 if elem_ch != None:
                     if len(x) == 1:

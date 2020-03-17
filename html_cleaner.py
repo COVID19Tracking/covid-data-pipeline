@@ -16,13 +16,13 @@ class HtmlCleaner:
         if elem.tag == "div":
             xid = elem.get("id")
             if xid == "DeltaPlaceHolderPageDescription" or xid == "DeltaPlaceHolderPageTitleInTitleArea": 
-                logger.debug("special case: remove deltaplaceholder for CA")
+                logger.debug("special case: remove deltaplaceholder")
                 self.to_remove.append(elem.getparent())
                 return True
         elif elem.tag == "a":        
             href = elem.get("href")
             if href == "#ctl00_ctl65_SkipLink": 
-                logger.debug("special case: remove skiplink for CA")
+                logger.debug("special case: remove skiplink")
                 self.to_remove.append(elem.getparent())
                 return True
         return False
