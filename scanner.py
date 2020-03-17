@@ -99,7 +99,7 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
         if capture: special_cases(capture)
         scanner.process()
 
-        if auto_push: git_push(scanner.config.base_dir, f"{scanner.change_list.start_date.isoformat()} on {host}")
+        if auto_push: git_push(scanner.config.base_dir, f"{format_datetime_for_log(scanner.change_list.start_date)} on {host}")
         if monitor_check(): return
         cnt = 1
         t = next_time()
@@ -118,7 +118,7 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
             try:
                 if capture: special_cases(capture)
                 scanner.process()
-                if auto_push: git_push(scanner.config.base_dir, f"{scanner.change_list.start_date.isoformat()} on {host}")
+                if auto_push: git_push(scanner.config.base_dir, f"{format_datetime_for_display(scanner.change_list.start_date)} on {host}")
             except Exception as ex:
                 logger.exception(ex)
                 print(f"run failed, wait 5 minutes and try again")
@@ -133,11 +133,11 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
         if capture: capture.close()
 
 
-def run_once(scanner: DataPipeline):
+def run_once(scanner: DataPipeline, auto_push: bool):
     scanner.process()
-    if args.auto_push:
+    if auto_push:
         host = get_host()
-        git_push(scanner.config.base_dir, f"{scanner.change_list.start_date.isoformat()} on {host}")
+        git_push(scanner.config.base_dir, f"{format_datetime_for_log(scanner.change_list.start_date)} on {host}")
 
 
 def main(args_list=None):
@@ -172,7 +172,7 @@ def main(args_list=None):
     else:        
         scanner.clean_html()
         scanner.extract_html()
-        run_once(scanner)
+        run_once(scanner, args.auto_push)
 
 
 if __name__ == "__main__":

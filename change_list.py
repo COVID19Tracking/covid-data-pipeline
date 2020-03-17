@@ -1,8 +1,12 @@
 import os
 import json
 from loguru import logger
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 from datetime import datetime
+from lxml import html
+
+from util import format_datetime_for_display, format_datetime_difference, \
+    convert_json_to_python, convert_python_to_json
 
 from directory_cache import DirectoryCache
 
@@ -21,6 +25,8 @@ class ChangeList:
 
         '_items',
         '_lookup',
+
+        'last_timestamp'
     )
 
     def __init__(self, cache: DirectoryCache):
@@ -32,6 +38,8 @@ class ChangeList:
         self.time_lapsed = self.end_date - self.start_date
         self.error_message = None
         self.complete = False
+
+        self.last_timestamp = ""
 
         self._items = []
         self._lookup = {}
@@ -73,13 +81,13 @@ class ChangeList:
         x = self._items[idx]
         checked_date = x["checked"]
         if checked_date == None: return 100000.0
-        delta = self.start_date - datetime.fromisoformat(checked_date)
+        delta = self.start_date - checked_date
 
         return delta.total_seconds() / 60.0
 
     def update_status(self, name: str, source: str, status: str, xurl: str, msg: str) -> Tuple[Dict, Dict, str]:
         
-        xnow = datetime.utcnow().isoformat()
+        xnow = datetime.utcnow()
 
         if msg == "": msg = None
         idx = self._lookup.get(name)
@@ -157,6 +165,8 @@ class ChangeList:
         y["failed"] = None
 
 
+        self.last_timestamp = xnow
+
     def _remove_text_files(self):
         for n in ["change_list.txt", "urls.txt"]:
             fn = os.path.join(self.cache.work_dir, n)
@@ -202,23 +212,229 @@ class ChangeList:
             for s in names:
                 write_block(f_changes, s)
 
-    def _write_json(self):
-        logger.info(f"time lapsed {self.time_lapsed}")
+    # -----------------------
 
-        fn = os.path.join(self.cache.work_dir, "change_list.json")
+    def _add_html_info_row(self, t: html.Element, label: str, val: str, cls: str = None):
+        tr = html.Element("tr")
 
+        td = html.Element("td")
+        td.text = label
+        if cls != None: td.attrib["class"] = cls
+        tr.append(td)
+
+        td = html.Element("td")
+        td.text = val
+        if cls != None: td.attrib["class"] = cls
+        tr.append(td)
+
+        tr.tail = "\n      "
+        t.append(tr)        
+
+    def _fill_info_table(self, t: html.Element):
+
+        self._add_html_info_row(t, "Started At", format_datetime_for_display(self.start_date))
+        self._add_html_info_row(t, "Ended At", format_datetime_for_display(self.end_date))
+        self._add_html_info_row(t, "Lapse Time (mins)", str(self.time_lapsed))
+        self._add_html_info_row(t, "Previous Run At", format_datetime_for_display(self.previous_date))
+        self._add_html_info_row(t, "Error Message", self.error_message, 
+            "err" if self.error_message else None)
+        t[-1].tail = "\n    "
+
+    def _make_source_link(self, kind: str, stage: str, name: str) -> html.Element:
+        d = html.Element("div")
+        if kind == stage:
+            a = html.Element("a")
+            # "http://covid19-api.exemplartech.com/github-data/raw/AZ.html
+            a.href = f"../{stage}/{name}"
+            a.text = stage
+            d.append(a)
+        else:
+            d.text = stage
+        d.tail = " => "        
+        return d
+
+    def _make_source_links(self, kind: str, name: str, source: str):
+
+        div = html.Element("div")
+        div.attrib["class"] = "source"
+                
+        kind = kind.lower()
+        d = self._make_source_link(kind, "extract", name)
+        div.append(d)
+        d = self._make_source_link(kind, "clean", name)
+        div.append(d)
+        d = self._make_source_link(kind, "raw", name)
+        div.append(d)
+        d = self._make_source_link(kind, source, name)
+        div.append(d)
+
+        return div        
+
+
+    def _add_data_row(self, t: html.Element, x: Dict, kind: str):
+
+    # {
+    #   "name": "AK.html",
+    #   "status": "unchanged",
+    #   "url": "http://dhss.alaska.gov/dph/Epi/id/Pages/COVID-19/default.aspx",
+    #   "msg": null,
+    #   "complete": true,
+    #   "added": "2020-03-13T06:17:50.550545",
+    #   "checked": "2020-03-16T22:00:07.143700",
+    #   "updated": "2020-03-16T21:40:10.611841",
+    #   "failed": null,
+    #   "source": "google-states"
+    # }
+        prefix = "\n      "
+
+        tr = html.Element("tr")
+        tr.tail = prefix
+
+        # Name
+        name = x["name"]
+        td = html.Element("td")
+        td.tail = prefix
+        a = html.Element("a")
+        a.attrib["href"] = name
+        a.attrib["target"] = "_blank"
+        a.text = name.replace(".html", "")
+        td.append(a)
+        tr.append(td)
+        t.append(tr)
+
+        # Status
+        status = x["status"]
+        err_msg =x["failed"]
+
+        td = html.Element("td")
+        td.tail = prefix
+        td.attrib["class"] = status
+        td.text = status
+        if err_msg != None:
+            td.attrib["tooltip"] = err_msg
+        tr.append(td)
+
+        # Last Changed
+        updated = x["updated"]
+        td = html.Element("td")
+        td.tail = prefix
+        td.text = format_datetime_for_display(updated)
+        tr.append(td)
+
+        # Delta
+        td = html.Element("td")
+        td.tail = prefix
+        td.text = format_time_difference(self.start_date, updated) if status != "CHANGED" else ""
+        tr.append(td)
+        t.append(tr)
+
+        # Live Page
+        url = x["url"]
+        td = html.Element("td")
+        td.tail = prefix
+        a = html.Element("a")
+        a.attrib["href"] = url
+        a.attrib["target"] = "_blank"
+        a.text = url
+        td.append(a)
+        tr.append(td)
+
+        # Pipeline        
+        source = x.get("source")
+        if source == None: source = "google-states"
+        td = html.Element("td")
+        td.tail = prefix[:-2]
+        div = self._make_source_links(kind, name, source)
+        td.append(div)
+        tr.append(td)
+
+        t.append(tr)
+
+
+    def _fill_data_table(self, t: html.Element, kind: str):
+
+        items = self._items
+        for x in items:
+            self._add_data_row(t, x, kind)
+        t[-1].tail = "\n    "
+        return t         
+
+
+    def write_html_to_cache(self, cache: DirectoryCache, kind: str):
+        
+        title = f"{kind} COVID data - {format_datetime_for_display(self.start_date)}"
+        doc = html.fromstring(f"""
+<html>
+  <head>
+        <title>{title}</title>
+        <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  </head>
+  <body>
+    <h3>{title}</h3>
+    <table id="data" class="data-table">
+        <tr><th>Name</th><th>Status</th><th>Changed At</th><th>Delta<th/><th>Live Page</th><th>Pipeline</th></tr>    
+    </table>
+    <br>
+    <hr>
+    <table id="info" class="info-table">
+        <tr><th colspan="2">Run Information</th></tr>
+    </table>
+  </body>
+</html>
+"""
+)        
+        t_info = doc.get_element_by_id("info")
+        t_data = doc.get_element_by_id("data")
+        
+        self._fill_info_table(t_info)
+        self._fill_data_table(t_data, kind)
+
+        fn = os.path.join(cache.work_dir, "index.html")
+        with open(fn, "wb") as f_changes:
+            f_changes.write(html.tostring(doc))
+
+    # -----------------------------
+
+    def _make_json(self):
         result = {}        
-        result["start_date"] = self.start_date.isoformat() 
-        result["end_date"] = self.end_date.isoformat()
-        result["previous_date"] = self.previous_date.isoformat()
+        result["start_date"] = self.start_date 
+        result["end_date"] = self.end_date
+        result["previous_date"] = self.previous_date
         result["time_lapsed"] = str(self.time_lapsed)
         result["complete"] = self.complete 
         result["error_message"] = self.error_message 
 
-        result["items"] = self._items
+        result["items"] = [x for x in self._items] 
 
-        with open(fn, "w") as f_changes:
+        convert_python_to_json(result)
+        return result
+
+    def _write_json(self):
+        logger.info(f"time lapsed {self.time_lapsed}")
+
+        result = self._make_json()
+
+        fn = os.path.join(self.cache.work_dir, "change_list.json")
+        fn_temp = os.path.join(self.cache.work_dir, "change_list.json.tmp")
+        with open(fn_temp, "w") as f_changes:
             json.dump(result, f_changes, indent=2)
+        if os.path.exists(fn): os.remove(fn)
+        os.rename(fn_temp, fn)
+
+    # {
+    #   "name": "AK.html",
+    #   "status": "unchanged",
+    #   "url": "http://dhss.alaska.gov/dph/Epi/id/Pages/COVID-19/default.aspx",
+    #   "msg": null,
+    #   "complete": true,
+    #   "added": "2020-03-13T06:17:50.550545",
+    #   "checked": "2020-03-16T22:00:07.143700",
+    #   "updated": "2020-03-16T21:40:10.611841",
+    #   "failed": null,
+    #   "source": "google-states"
+    # }
+
+
 
     def _read_json(self):
         fn = os.path.join(self.cache.work_dir, "change_list.json")
@@ -229,9 +445,11 @@ class ChangeList:
         with open(fn, "r") as f_changes:
             result = json.load(f_changes)
 
-        self.start_date = datetime.fromisoformat(result["start_date"])  
-        self.end_date = datetime.fromisoformat(result["end_date"])
-        self.previous_date = datetime.fromisoformat(result["previous_date"]) 
+        convert_json_to_python(result)
+
+        self.start_date = result["start_date"]  
+        self.end_date = result["end_date"]
+        self.previous_date = result["previous_date"] 
         self.time_lapsed = self.end_date - self.start_date
         self.error_message = result["error_message"] 
 
@@ -242,8 +460,6 @@ class ChangeList:
             n = self._items[idx]["name"]
             self._lookup[n] = idx
 
-
-
     def _write_urls(self):
         fn = os.path.join(self.cache.work_dir, "urls.txt")
         with open(fn, "w") as furl:
@@ -251,6 +467,7 @@ class ChangeList:
             for x in self._items:
                 name, xurl = x["name"], x["url"]
                 furl.write(f"{name}\t{xurl}\n")
+
 
     def read_urls_as_dict(self) -> Dict:
         result = {}

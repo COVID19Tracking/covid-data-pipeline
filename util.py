@@ -1,12 +1,12 @@
 import os
 import sys
 import requests
-from datetime import datetime, timezone
-import pytz
+from datetime import datetime, timezone, timedelta
 import time
+import pytz
 from loguru import logger
 import re
-from typing import Tuple, List, Callable
+from typing import Tuple, List, Dict, Callable
 import subprocess
 import signal
 import sys
@@ -52,9 +52,104 @@ def format_mins(x : float):
         return f"{x:.1f} hours"
     return f"{x:.1f} days"
 
-def format_datetime_for_file(dt: datetime):
-    #return dt.isoformat().replace(":", "_x_").replace("+", "_p_")
+def format_datetime_for_filename(dt: datetime) -> str:
+    if dt == None: return None
     return dt.strftime('%Y%m%d-%H%M%S')
+
+eastern_time_zone = pytz.timezone("US/Eastern")
+
+def format_datetime_for_log(dt: datetime) -> str:
+    if dt == None: return "[none]"
+    if type(dt) == str:
+        logger.warning("input date is a string, try parsing with isoformat")
+        dt = datetime.fromisoformat(dt)
+    return dt.astimezone(eastern_time_zone).strftime('%Y-%m-%d %H:%M:%S %Z')
+
+def format_datetime_for_display(dt: datetime) -> str:
+    if dt == None: return ""
+    if type(dt) == str:
+        logger.warning("input date is a string, try parsing with isoformat")
+        dt = datetime.fromisoformat(dt)
+    return dt.astimezone(eastern_time_zone).strftime('%Y-%m-%d %H:%M:%S %Z')
+
+def format_datetime_difference(t1: datetime, t2: datetime) -> str:
+    if t1 == None or t2 == None: return ""
+    if type(t1) == str:
+        logger.warning("input date is a string, try parsing with isoformat")
+        t1 = datetime.fromisoformat(t1)
+    if type(t2) == str:
+        logger.warning("input date is a string, try parsing with isoformat")
+        t2 = datetime.fromisoformat(t2)
+
+
+    if t1 < t2: return "NOW"
+    delta = t1 - t2
+    if delta.days != 0:
+        return "OLD"
+    else:
+        sec = delta.seconds
+        h = sec // (60*60)
+        m = (sec - h * 60*60) // 60
+        return f"{h:02d}:{m:02d}"
+
+def is_isoformated_str(s: str) -> False:
+    if type(s) != str: return False
+    #2020-03-13T06:17:50.204477
+    return re.match("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{6})?", s)
+
+def convert_json_to_python(x):
+    if x is None:
+        pass
+    elif type(x) == str:
+        if is_isoformated_str(x):
+            x = datetime.fromisoformat(x)
+    elif type(x) == float:
+        pass
+    elif type(x) == int:
+        pass
+    elif type(x) == bool:
+        pass
+    elif type(x) == dict:
+        for n in x:
+            v = x[n]
+            x[n] = convert_json_to_python(v)
+    elif type(x) == list:
+        for i in len(x):
+            v = x[i]
+            x[i] = convert_json_to_python(v)
+    else:
+        raise Exception(f"unexpected type: {type(x)}")
+    return x 
+
+def convert_python_to_json(x):
+    if x is None:
+        pass
+    elif type(x) == str:
+        if is_isoformated_str(x):
+            raise Exception("invalid str, content would be converted to datetime on load")
+    elif type(x) == datetime:
+        x = x.toisformat()
+    elif type(x) == float:
+        pass
+    elif type(x) == int:
+        pass
+    elif type(x) == bool:
+        pass
+    elif type(x) == dict:
+        for n in x:
+            v = x[n]
+            x[n] = convert_python_to_json(v)
+    elif type(x) == list:
+        for i in len(x):
+            v = x[i]
+            x[i] = convert_python_to_json(v)
+    else:
+        raise Exception(f"unexpected type: {type(x)}")
+    return x 
+
+
+
+# -----
 
 def get_host():
     host = os.environ.get("HOST")

@@ -26,7 +26,7 @@ from html_extracter import HtmlExtracter
 from specialized_capture import SpecializedCapture
 
 from util import is_bad_content, get_host, \
-    git_pull, git_push, \
+    git_pull, git_push, format_datetime_for_log, \
     monitor_start, monitor_check
 
 class DataPipelineConfig():
@@ -55,9 +55,6 @@ class DataPipeline():
 
         self.url_manager = UrlManager()
 
-        self.html_cleaner = HtmlCleaner()
-        self.html_extracter = HtmlExtracter()
-
         self._capture: SpecializedCapture = None 
 
     def get_capture(self) -> SpecializedCapture:
@@ -81,7 +78,7 @@ class DataPipeline():
         self.change_list = ChangeList(self.cache_raw)        
         
         host = get_host()
-        print(f"=== run started on {host} at {self.change_list.start_date.isoformat()}")
+        print(f"=== run started on {host} at {format_datetime_for_log(self.change_list.start_date)}")
 
         self.change_list.start_run()
         try:
@@ -95,19 +92,22 @@ class DataPipeline():
             self.shutdown_capture()
 
             logger.info(f"  [in-memory content cache took {self.url_manager.size*1e-6:.1f} MBs")
-            logger.info(f"run finished on {host} at {self.change_list.start_date.isoformat()}")
+            logger.info(f"run finished on {host} at {format_datetime_for_log(self.change_list.start_date)}")
             
     def clean_html(self, rerun=False):
         " generate clean files from existing raw html "
         is_first = False
         for key in self.cache_raw.list_html_files():
+            if key == "index.html": continue
+            if key == "google_sheet.html": continue
             if rerun or not self.cache_clean.exists(key):
                 if is_first:
                     logger.info(f"clean existing files...")
                     is_first = False
                 logger.info(f"  clean {key}")
                 local_raw_content =  self.cache_raw.read(key)
-                local_clean_content = self.html_cleaner.clean(local_raw_content)
+                cleaner = HtmlCleaner()
+                local_clean_content = cleaner.clean(local_raw_content)
                 self.cache_clean.write(key, local_clean_content)
 
 
@@ -115,6 +115,8 @@ class DataPipeline():
         " generate extract files from existing clean html "
         is_first = False
         for key in self.cache_clean.list_html_files():
+            if key == "index.html": continue
+            if key == "google_sheet.html": continue
             if rerun or not self.cache_extract.exists(key):
                 if is_first:
                     logger.info(f"extract existing files...")
@@ -129,7 +131,8 @@ class DataPipeline():
                     "clean": f"http://covid19-api.exemplartech.com/clean/{key}"
                 }
 
-                local_extract_content = self.html_extracter.extract(local_clean_content, attributes)
+                extracter = HtmlExtracter()
+                local_extract_content = extracter.extract(local_clean_content, attributes)
                 self.cache_extract.write(key, local_extract_content)
 
 
@@ -183,12 +186,26 @@ class DataPipeline():
             remote_raw_content = remote_raw_content.replace(b"\r", b"")
 
             local_clean_content =  self.cache_clean.read(key)
-            remote_clean_content = self.html_cleaner.clean(remote_raw_content)
+            cleaner = HtmlCleaner()
+            remote_clean_content = cleaner.clean(remote_raw_content)
 
             if local_clean_content != remote_clean_content:
+
                 self.cache_raw.write(key, remote_raw_content)
                 self.cache_clean.write(key, remote_clean_content)
                 change_list.record_changed(key, source, xurl)
+
+                attributes = {
+                    "title": f"Data for {location} (source={source})",
+                    "source": xurl,
+                    "raw": f"http://covid19-api.exemplartech.com/raw/{key}",
+                    "clean": f"http://covid19-api.exemplartech.com/clean/{key}",
+                    "changed_at": change_list.last_timestamp                    
+                }
+                extracter = HtmlExtracter()
+                remote_extract_content = extracter.extract(remote_clean_content, attributes)
+                self.cache_extract.write(key, remote_extract_content)
+
 
                 if self.config.capture_image:
                     c = self.get_capture()
@@ -227,3 +244,7 @@ class DataPipeline():
                 else:
                     fetch_if_changed(location + "_data", source, data_url, skip=skip)
             
+
+        change_list.write_html_to_cache(self.cache_raw, "RAW")
+        change_list.write_html_to_cache(self.cache_clean, "CLEAN")
+        change_list.write_html_to_cache(self.cache_extract, "EXTRACT")

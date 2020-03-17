@@ -11,7 +11,7 @@ import atexit
 from captive_browser import CaptiveBrowser, are_images_same
 from directory_cache import DirectoryCache
 
-from util import format_datetime_for_file, get_host, git_push
+from util import format_datetime_for_file, format_datetime_for_display, get_host, git_push
 
 class SpecializedCapture():
 
@@ -45,7 +45,7 @@ class SpecializedCapture():
         else:
             host = get_host()
             dt = datetime.now(timezone.utc)
-            msg = f"{dt.isoformat()} on {host} - Specialized Capture"
+            msg = f"{format_datetime_for_display(dt)} on {host} - Specialized Capture"
             git_push(self.publish_dir, msg)
 
     def remove(self, key: str):
@@ -118,7 +118,7 @@ class SpecializedCapture():
     <html>
     <body>
             <h3>{label}</h3>
-            <div>captured: {dt.isoformat()}</div>
+            <div>captured: {format_datetime_for_display(dt)}</div>
             <div>src: <a href='{url}'>{url}</a></div>
             <br />
             <img src='images/{xkey_image}'>
