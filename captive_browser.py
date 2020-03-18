@@ -46,8 +46,15 @@ class CaptiveBrowser:
         #options.add_argument('headless')
         #self.driver = webdriver.Chrome(options=options)
 
-    def get(self, url: str):
-        self.driver.get(url)
+    def get(self, url: str) -> bool:
+        try:
+            self.driver.get(url)
+            return True
+        except Exception as ex:
+            logger.error(ex)
+            s = str(ex)
+            if "Timeout loading page" in s: return False
+            raise ex
     
     def wait(self, secs: int, wait_for: Callable = None):
         w = WebDriverWait(self.driver, secs)

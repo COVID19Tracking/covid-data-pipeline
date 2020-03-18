@@ -97,7 +97,14 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
     host = get_host()
     try:
         print("starting continuous run")
-        if capture: special_cases(capture)
+        if capture: 
+            try:
+                special_cases(capture)
+            except Exception as ex:
+                logger.error(ex)
+                logger.error("*** continue after exception in specialized capture")
+
+
         scanner.process()
 
         if auto_push: git_push(scanner.config.base_dir, f"{format_datetime_for_log(scanner.change_list.start_date)} on {host}")

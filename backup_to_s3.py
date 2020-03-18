@@ -70,8 +70,10 @@ class S3Backup():
 # saves screenshot of data_url to specified path. takes 5 sec. can throw exception on load fail
 def screenshot_to_path(data_url, path, browser):
     logger.info(f"    1. get content from {data_url}")
-    browser.get(data_url)
-    
+    if not browser.get(data_url):
+        logger.error("  get timed out -> skip")
+        return
+
     logger.info(f"    2. wait for 5 seconds")
     time.sleep(5)
 
