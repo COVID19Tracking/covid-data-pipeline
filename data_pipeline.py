@@ -13,12 +13,13 @@ files are only updated if the cleaned version changes
 import os
 from loguru import logger
 from typing import List, Dict, Tuple
+import pandas as pd
 
 from directory_cache import DirectoryCache
 from change_list import ChangeList
 
 from url_manager import UrlManager
-from url_source import UrlSource, get_available_sources
+from url_source import get_available_sources, dataframe_to_html
 
 from html_cleaner import HtmlCleaner
 from html_extracter import HtmlExtracter
@@ -151,6 +152,22 @@ class DataPipeline():
                 c = self.get_capture()
                 c.remove(location)
 
+        def save_source_data_if_changed(name: str, endpoint: str,
+            df_config: pd.DataFrame, raw_content: bytes,
+            change_list: ChangeList):
+
+            key = f"source-{name}.html"
+            new_content = dataframe_to_html(df_config)
+ 
+            old_content = self.cache_extract.read(key)
+            if old_content == new_content:
+                change_list.record_unchanged(key, name, endpoint)
+            else:
+                self.cache_extract.write(key, new_content)
+                self.cache_clean.write(key, new_content)
+                self.cache_raw.write(key, raw_content)
+                change_list.record_changed(key, name, endpoint)
+
         def fetch_if_changed(location: str, source: str, xurl: str, skip: bool = False) -> bool:
 
             key = location + ".html"
@@ -213,10 +230,11 @@ class DataPipeline():
                 return False
 
         # -- get states info from API
-        url_sources = get_available_sources()
-        logger.info(f"processing source {url_sources[0].name}")
-        df_config = url_sources[0].load()
-        url_sources[0].save_if_changed(self.cache_raw, change_list)
+        sources = get_available_sources()
+        df_config, endpoint_config, content_config = sources.load("google-states")
+        save_source_data_if_changed("source-google-states", endpoint_config, 
+            df_config, content_config, change_list)
+
 
         # -- fetch pages
         skip = False

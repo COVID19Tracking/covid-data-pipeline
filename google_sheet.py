@@ -1,5 +1,5 @@
 #
-# Extracts data from a google sheet -- not used anymore 
+# Parse a google sheet 
 #
 import os
 from typing import List, Dict
@@ -11,24 +11,38 @@ from lxml import html, etree
 import pandas as pd
 
 
-class SheetParser():
+class GoogleSheet():
 
-    def __init__(self):
-        pass
+    def __init__(self, content: bytes):
+        self.tree = html.fromstring(content)
+        self.menus = self._get_menu(self.tree) 
 
-    def get_config(self, content: bytes) -> pd.DataFrame:
-        " gets the 'States' configuration table as a data frame"
-        tree = html.fromstring(content)
-        menu = self.get_menu(tree)
+        names = [ x for x in self.menus ]
+        logger.info(f"  google sheet tabs: {names}")
 
-        x_id = menu["States"]
-        states_table = tree.get_element_by_id(x_id)[0][0]
-        df = self.htmltable_to_dataframe(states_table)
+    def get_tab(self, name: str) -> pd.DataFrame:
+        " gets the a tab as a data frame"
+
+        if not name in self.menus:
+            names = [ x for x in self.menus ]
+            raise Exception(f"invalid tab name {name}, valid names are {names}")
+
+        x_id =  self.menus[name]
+        sheet = self.tree.get_element_by_id(x_id)[0][0]
+        df = self._htmltable_to_dataframe(sheet)
         return df
 
-    def get_menu(self, tree: etree) -> Dict[str, str]:
+    def _get_menu(self, tree: etree) -> Dict[str, str]:
         " gets the tabs from a google sheet "
-        xmenu = tree.get_element_by_id("sheet-menu")
+        try:
+            xmenu = tree.get_element_by_id("sheet-menu")
+        except Exception as ex:
+            logger.error(ex)
+            raise Exception("Could not find menu")
+
+        #if xmenu == None:
+        #    raise Exception("Could not find menu")
+
         menu = {}
         for x in xmenu:
             if x.tag == "li":
@@ -37,7 +51,7 @@ class SheetParser():
                 menu[x_label] = x_id
         return menu
 
-    def htmltable_to_dataframe(self, table: etree) -> pd.DataFrame:
+    def _htmltable_to_dataframe(self, table: etree) -> pd.DataFrame:
         " converts a google sheet tab into a data frame"
         names = []
         data = []
