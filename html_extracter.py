@@ -228,6 +228,15 @@ class HtmlExtracter:
     def extract(self, content: Union[bytes,str], item: ChangeItem) -> bytes:
         " Get Interesting Content from the HTML and reorganize it "
         
+        try:
+            return self._extract(content, item)
+        except Exception as ex:
+            logger.exception(ex)
+            logger.error("extract failed")
+            return None
+
+    def _extract(self, content: Union[bytes,str], item: ChangeItem) -> bytes:
+
         if self.trace: logger.info(f"input ===>\n{content}<===\n")
 
         doc = html.fromstring(content)

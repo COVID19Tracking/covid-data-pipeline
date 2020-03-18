@@ -191,6 +191,16 @@ class HtmlCleaner:
     def clean(self, content: Union[bytes,str]) -> bytes:
         " Remove all layout/display informattion from HTML "
         
+        try:
+            return self._clean(content)
+        except Exception as ex:
+            logger.exception(ex)
+            logger.error("clean failed")
+            return None
+
+
+
+    def _clean(self, content: Union[bytes,str]) -> bytes:
         if self.trace: logger.info(f"input ===>\n{content}<===\n")
 
         self.to_remove = []
@@ -205,6 +215,13 @@ class HtmlCleaner:
             #else:
             #    for e in x: x.remove(e)
             #    doc = x
+
+        if len(doc) == 0:
+            logger.warning("  cleaned document is empty")
+        for x in doc:
+            if x.tag == "body":
+                if len(x) == 0:
+                    logger.warning("  cleaned document's body is empty")
 
         out_content = html.tostring(doc, pretty_print=True)
 
