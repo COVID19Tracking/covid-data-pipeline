@@ -1,8 +1,19 @@
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('..'))
+
 from datetime import datetime
 from dateutil import tz
 import pytz
 
+import udatetime
+
 def test_1():
+
+    print("==== test_1")
+    print("")
 
     edt = pytz.timezone("US/Eastern")
     cdt = pytz.timezone("US/Central")
@@ -26,5 +37,44 @@ def test_1():
     print(f"cdt={dt.astimezone(cdt)}")
     print(f"local={dt.astimezone()}")
 
+    print("")
+    print("")
+
+def test_2():
+
+    print("==== test_2")
+    print("")
+    local = datetime.now().astimezone() 
+    print(f"local = {local} {local.tzinfo}")
+
+    local2 = udatetime.now_as_local()
+    print(f"udatetime.now_as_local = {local2} {local.tzinfo}")
+    assert(local2.tzinfo == local.tzinfo)
+    assert((local2.hour - local.hour) < 1)
+
+    print("")
+    print("")
+
+def test_3():
+
+    print("==== test_3")
+    print("")
+    local = datetime.now().astimezone() 
+    print(f"local = {local} {local.tzinfo}")
+
+    utc = udatetime.now_as_utc()
+    print(f"udatetime.now_as_utc = {utc} {utc.tzinfo}")
+    assert(utc.tzinfo == pytz.UTC)
+
+    local2 = utc.astimezone(local.tzinfo)
+    print(f"udatetime.now_as_utc in local time = {local2} {local2.tzinfo}")
+    assert((local2.hour - local.hour) < 1)
+
+    print("")
+    print("")
+
+
 if __name__ == "__main__":
     test_1()
+    test_2()
+    test_3()
