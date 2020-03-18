@@ -17,11 +17,24 @@ eastern_tz = pytz.timezone("US/Eastern")
 # Do not use utcnow.  It returns a naive date at current time in England.
 #
 
-def now() -> datetime:
+def now_as_utc() -> datetime:
     """ get current time as a tz-aware datetime 
     if you are on CT and your local time is 4pm, the UTC time is 9pm 
     """
     xnow = datetime.now().astimezone(pytz.UTC)
+    return xnow
+
+def now_as_eastern() -> datetime:
+    """ get current time on east-coast as a tz-aware datetime 
+    """
+    xnow = datetime.now().astimezone(eastern_tz)
+    return xnow
+
+
+def now_as_local() -> datetime:
+    """ get current time as a tz-aware datetime 
+    """
+    xnow = datetime.now().astimezone()
     return xnow
 
 def file_modified_at(xpath: str) -> datetime:
