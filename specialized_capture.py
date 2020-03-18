@@ -11,7 +11,9 @@ import atexit
 from captive_browser import CaptiveBrowser, are_images_same
 from directory_cache import DirectoryCache
 
-from util import format_datetime_for_filename, format_datetime_for_display, get_host, git_push
+from util import get_host
+import util_git
+import udatetime
 
 class SpecializedCapture():
 
@@ -46,8 +48,8 @@ class SpecializedCapture():
         else:
             host = get_host()
             dt = datetime.now(timezone.utc)
-            msg = f"{format_datetime_for_display(dt)} on {host} - Specialized Capture"
-            git_push(self.publish_dir, msg)
+            msg = f"{udatetime.to_displayformat(dt)} on {host} - Specialized Capture"
+            util_git.push(self.publish_dir, msg)
 
     def remove(self, key: str):
         self.cache.remove(key)
@@ -103,7 +105,7 @@ class SpecializedCapture():
             os.rename(xpath_temp, xpath)
 
         dt = datetime.now(timezone.utc)
-        timestamp = format_datetime_for_filename(dt)
+        timestamp = udatetime.to_filenameformat(dt)
         key_image = key + "_" + timestamp + ".png"
 
         logger.info(f"    4. publish unique image {key_image}")
@@ -120,7 +122,7 @@ class SpecializedCapture():
     <html>
     <body>
             <h3>{label}</h3>
-            <div>captured: {format_datetime_for_display(dt)}</div>
+            <div>captured: {udatetime.to_displayformat(dt)}</div>
             <div>src: <a href='{url}'>{url}</a></div>
             <br />
             <img src='images/{xkey_image}'>

@@ -11,7 +11,7 @@ import pytz
 from typing import Union, List, Tuple, Dict
 import subprocess
 
-from util import file_age, format_mins
+import udatetime
 
 class DirectoryCache:
     """  a simple disk-based page cache """
@@ -50,7 +50,7 @@ class DirectoryCache:
         else:
             old_date = "[NONE]"
 
-        dt = datetime.now(timezone.utc).astimezone()
+        dt = udatetime.now_as_utc()
         new_date = f"{dt} ({dt.tzname()})" 
         with open(xpath, "w") as f:
             f.write(f"{new_date}\n")
@@ -61,7 +61,7 @@ class DirectoryCache:
         xpath = os.path.join(self.work_dir, file_name)
         if not os.path.isfile(xpath): return 10000
 
-        xdelta = file_age(xpath)
+        xdelta = udatetime.file_age(xpath)
         return xdelta
 
     def read_date_time_str(self, key: str) -> float:
@@ -69,12 +69,10 @@ class DirectoryCache:
         xpath = os.path.join(self.work_dir, file_name)
         if not os.path.isfile(xpath): return "Missing"
 
-        mtime = os.path.getmtime(xpath)
-        mtime = datetime.fromtimestamp(mtime)
-        dt = mtime
+        dt = udatetime.file_age(xpath)
 
-        xdelta = file_age(xpath)
-        return f"changed at {dt} ({dt.tzname()}): {format_mins(xdelta)} ago" 
+        xdelta = udatetime.file_age(xpath)
+        return f"changed at {udatetime.to_displayformat(dt)}): {udatetime.format_mins(xdelta)} ago" 
 
 
     def exists(self, key: str) -> bool:
@@ -187,7 +185,7 @@ class DirectoryCache:
 
         for fn in os.listdir(self.work_dir):
             xpath = os.path.join(self.work_dir, fn)
-            if file_age(xpath) > max_age_mins:
+            if udatetime.file_age(xpath) > max_age_mins:
                 if self.trace: logger.debug(f"   remove {xpath}")
                 os.remove(xpath)
 

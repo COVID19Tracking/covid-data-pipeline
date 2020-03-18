@@ -7,8 +7,8 @@ from lxml import html
 
 from directory_cache import DirectoryCache
 
-from util import format_datetime_for_display, format_datetime_difference, require_utc_date, datetime_utcnow_with_tz, \
-    convert_json_to_python, convert_python_to_json
+from util import convert_json_to_python, convert_python_to_json
+import udatetime
 import html_helpers
 
 class ChangeItem:
@@ -39,10 +39,10 @@ class ChangeItem:
     def to_dict(self) -> Dict:
         y = { "name": self.name, "source": self.source, "status": self.status, 
             "url": self.url, "msg": self.msg, "complete": self.complete,
-            "added": require_utc_date(self.added), 
-            "checked": require_utc_date(self.checked), 
-            "updated": require_utc_date(self.updated), 
-            "failed": require_utc_date(self.failed) 
+            "added": udatetime.require_utc(self.added), 
+            "checked": udatetime.require_utc(self.checked), 
+            "updated": udatetime.require_utc(self.updated), 
+            "failed": udatetime.require_utc(self.failed) 
         }
         return y
 
@@ -58,10 +58,10 @@ class ChangeItem:
         self.msg = y["msg"]
         self.complete = y["complete"]
                 
-        self.added = require_utc_date(y["added"])
-        self.checked = require_utc_date(y["checked"])
-        self.updated = require_utc_date(y["updated"])
-        self.failed = require_utc_date(y["failed"])
+        self.added = udatetime.require_utc(y["added"])
+        self.checked = udatetime.require_utc(y["checked"])
+        self.updated = udatetime.require_utc(y["updated"])
+        self.failed = udatetime.require_utc(y["failed"])
 
 
 class ChangeList:
@@ -86,7 +86,7 @@ class ChangeList:
     def __init__(self, cache: DirectoryCache):
         self.cache = cache
 
-        self.start_date = datetime_utcnow_with_tz()
+        self.start_date = udatetime.now_as_utc()
         self.end_date = self.start_date
         self.previous_date = self.start_date
         self.time_lapsed = self.end_date - self.start_date
@@ -105,7 +105,7 @@ class ChangeList:
         self._read_json()
 
         self.previous_date = self.start_date
-        self.start_date = datetime_utcnow_with_tz()
+        self.start_date = udatetime.now_as_utc()
         self.end_date = self.start_date
         self.time_lapsed = self.end_date - self.start_date
         
@@ -115,7 +115,7 @@ class ChangeList:
 
 
     def save_progress(self):
-        self.end_date = datetime_utcnow_with_tz()
+        self.end_date = udatetime.now_as_utc()
         self.time_lapsed = self.end_date - self.start_date
 
         self._write_json()
@@ -141,7 +141,7 @@ class ChangeList:
         if idx == None: return 100000.0
 
         x = self._items[idx]
-        checked_date = require_utc_date(x.checked)
+        checked_date = udatetime.require_utc(x.checked)
         if checked_date == None: return 100000.0
         delta = self.start_date - checked_date
 
@@ -149,7 +149,7 @@ class ChangeList:
 
     def update_status(self, name: str, source: str, status: str, xurl: str, msg: str) -> Tuple[ChangeItem, ChangeItem, str]:
         
-        xnow = datetime_utcnow_with_tz()
+        xnow = udatetime.now_as_utc()
 
         if msg == "": msg = None
         idx = self._lookup.get(name)
@@ -291,10 +291,10 @@ class ChangeList:
 
     def _fill_info_table(self, t: html.Element):
 
-        self._add_html_info_row(t, "Started At", format_datetime_for_display(self.start_date))
-        self._add_html_info_row(t, "Ended At", format_datetime_for_display(self.end_date))
+        self._add_html_info_row(t, "Started At", udatetime.to_displayformat(self.start_date))
+        self._add_html_info_row(t, "Ended At", udatetime.to_displayformat(self.end_date))
         self._add_html_info_row(t, "Lapse Time (mins)", str(self.time_lapsed))
-        self._add_html_info_row(t, "Previous Run At", format_datetime_for_display(self.previous_date))
+        self._add_html_info_row(t, "Previous Run At", udatetime.to_displayformat(self.previous_date))
         self._add_html_info_row(t, "Error Message", self.error_message, 
             "err" if self.error_message else None)
         t[-1].tail = "\n    "
@@ -350,9 +350,9 @@ class ChangeList:
         td.tail = prefix
         if failed_at != None:
             td.attrib["class"] = "failed"
-            td.text = format_datetime_for_display(failed_at)
+            td.text = udatetime.to_displayformat(failed_at)
         else:
-            td.text = format_datetime_for_display(updated_at)
+            td.text = udatetime.to_displayformat(updated_at)
         tr.append(td)
 
         # Delta
@@ -360,7 +360,7 @@ class ChangeList:
         td.tail = prefix
 
         v = updated_at if failed_at == None else failed_at
-        td.text = format_datetime_difference(self.start_date, v) if status != "CHANGED" else ""
+        td.text = udatetime.format_difference(self.start_date, v) if status != "CHANGED" else ""
         tr.append(td)
         t.append(tr)
 
@@ -405,7 +405,7 @@ class ChangeList:
 
     def write_html_to_cache(self, cache: DirectoryCache, kind: str):
         
-        title = f"{kind} COVID data - {format_datetime_for_display(self.start_date)}"
+        title = f"{kind} COVID data - {udatetime.to_displayformat(self.start_date)}"
         doc = html.fromstring(f"""
 <html>
   <head>

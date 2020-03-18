@@ -19,10 +19,9 @@ from typing import List, Dict, Tuple
 from data_pipeline import DataPipeline, DataPipelineConfig
 from specialized_capture import SpecializedCapture, special_cases
 
-from util import get_host, \
-    git_pull, git_push, \
-    format_datetime_for_display, format_datetime_for_log, \
-    monitor_start, monitor_check
+from util import get_host
+import udatetime
+import util_git
 
 # ----------------------
 parser = ArgumentParser(
@@ -92,7 +91,7 @@ def init_specialized_capture(args: Namespace) -> SpecializedCapture:
 
 def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push: bool):
 
-    if monitor_check(): return
+    if util_git.monitor_check(): return
 
     host = get_host()
     try:
@@ -100,8 +99,8 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
         if capture: special_cases(capture)
         scanner.process()
 
-        if auto_push: git_push(scanner.config.base_dir, f"{format_datetime_for_log(scanner.change_list.start_date)} on {host}")
-        if monitor_check(): return
+        if auto_push: util_git.push(scanner.config.base_dir, f"{udatetime.to_logformat(scanner.change_list.start_date)} on {host}")
+        if util_git.monitor_check(): return
         cnt = 1
         t = next_time()
 
@@ -110,7 +109,7 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
             time.sleep(15)
             if datetime.now() < t: continue
 
-            if monitor_check(): break
+            if util_git.monitor_check(): break
 
             print("==================================")
             print(f"=== run {cnt} at {t}")
@@ -119,7 +118,7 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
             try:
                 if capture: special_cases(capture)
                 scanner.process()
-                if auto_push: git_push(scanner.config.base_dir, f"{format_datetime_for_display(scanner.change_list.start_date)} on {host}")
+                if auto_push: util_git.push(scanner.config.base_dir, f"{udatetime.to_displayformat(scanner.change_list.start_date)} on {host}")
             except Exception as ex:
                 logger.exception(ex)
                 print(f"run failed, wait 5 minutes and try again")
@@ -138,7 +137,7 @@ def run_once(scanner: DataPipeline, auto_push: bool):
     scanner.process()
     if auto_push:
         host = get_host()
-        git_push(scanner.config.base_dir, f"{format_datetime_for_log(scanner.change_list.start_date)} on {host}")
+        util_git.push(scanner.config.base_dir, f"{udatetime.to_logformat(scanner.change_list.start_date)} on {host}")
 
 
 def main(args_list=None):
@@ -148,7 +147,7 @@ def main(args_list=None):
     args = parser.parse_args(args_list)
 
     if args.auto_update:
-        return monitor_start("--auto_update")
+        return util_git.monitor_start("--auto_update")
     if not args.auto_push:
         logger.warning("github push is DISABLED")
 

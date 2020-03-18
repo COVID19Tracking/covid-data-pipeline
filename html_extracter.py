@@ -8,7 +8,8 @@ from datetime import datetime
 from change_list import ChangeItem
 from content_table import ContentTable
 from content_text import ContentText, make_content_text
-from util import format_datetime_for_display
+
+import udatetime
 import html_helpers
 
 class HtmlExtracter:
@@ -107,7 +108,7 @@ class HtmlExtracter:
         tr.append(td)
         
         if type(v) == datetime:
-            tr[1].text = format_datetime_for_display(v)
+            tr[1].text = udatetime.to_displayformat(v)
         elif type(v) == str and v.startswith("http"):
             a = html.Element("a")
             a.attrib["href"] = v

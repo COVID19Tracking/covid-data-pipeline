@@ -25,9 +25,9 @@ from html_extracter import HtmlExtracter
 
 from specialized_capture import SpecializedCapture
 
-from util import is_bad_content, get_host, \
-    git_pull, git_push, format_datetime_for_log, \
-    monitor_start, monitor_check
+from util import is_bad_content, get_host
+import util_git
+import udatetime
 
 class DataPipelineConfig():
 
@@ -78,7 +78,7 @@ class DataPipeline():
         self.change_list = ChangeList(self.cache_raw)        
         
         host = get_host()
-        print(f"=== run started on {host} at {format_datetime_for_log(self.change_list.start_date)}")
+        print(f"=== run started on {host} at {udatetime.to_logformat(self.change_list.start_date)}")
 
         self.change_list.start_run()
         try:
@@ -92,7 +92,7 @@ class DataPipeline():
             self.shutdown_capture()
 
             logger.info(f"  [in-memory content cache took {self.url_manager.size*1e-6:.1f} MBs")
-            logger.info(f"run finished on {host} at {format_datetime_for_log(self.change_list.start_date)}")
+            logger.info(f"run finished on {host} at {udatetime.to_logformat(self.change_list.start_date)}")
             
     def clean_html(self, rerun=False):
         " generate clean files from existing raw html "

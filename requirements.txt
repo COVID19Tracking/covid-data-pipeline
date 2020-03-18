@@ -6,3 +6,4 @@ lxml
 imageio
 selenium
 unidecode
+boto3
