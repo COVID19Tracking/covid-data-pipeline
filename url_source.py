@@ -159,7 +159,7 @@ class UrlSource:
             raise Exception(f"Unexpected mode: {mode}")
         return self.enable_for_run
 
-    def update_from_remote(self):
+    def update_from_remote(self) -> pd.DataFrame:
 
         logger.info(f"update from remote {self.name}")
 
@@ -171,9 +171,10 @@ class UrlSource:
             if not df is None:
                 logger.info(f"  found {df.shape[0]} records")
         else:
+            df = None
             logger.info(f"  no content")
 
-
+        return df
 # -------------------------------------------------
 class UrlSources():
 
@@ -262,3 +263,13 @@ def dataframe_to_html(df: pd.DataFrame) -> bytes:
     return buffer.getvalue().encode()
 
 
+def load_one_source(name: str) -> UrlSources:
+    sources = UrlSources()
+    sources.scan(sources_config)
+    
+    idx = sources.names.index(name)
+    if idx < 0: raise Exception("Invalid source name: {name}, should be one of " + ", ".join(sources.names))
+
+    src = sources.items[idx]
+    src.update_from_remote()
+    return src

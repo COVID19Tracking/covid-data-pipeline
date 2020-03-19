@@ -13,7 +13,9 @@ import boto3
 from loguru import logger
 
 from captive_browser import CaptiveBrowser
-from url_source import get_available_sources
+from url_source import load_one_source
+
+
 
 parser = ArgumentParser(
     description=__doc__,
@@ -113,12 +115,9 @@ def main(args_list=None):
     s3 = S3Backup(bucket_name=args.s3_bucket)
 
     # get states info from API
-    name = "google-states-csv"
-    url_sources = get_available_sources()
-    logger.info(f"processing source {name}")
-    state_info_df, endpoint, _ = url_sources.load(name)
-    logger.info(f"  endpoint = {endpoint}")
-
+    src = load_one_source("google-states-csv")
+    state_info_df = src.df
+    
     failed_states = []
 
     def screenshot_with_size_handling(state, data_url):

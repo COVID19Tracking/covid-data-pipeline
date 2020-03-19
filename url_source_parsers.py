@@ -296,21 +296,21 @@ def parse_cds(content: bytes) -> pd.DataFrame:
 # ------------------------------------------
 sources_config = [
     { 
-        "name": "google-states", 
-        "subfolder": "",
-        "endpoint": "https://docs.google.com/spreadsheets/d/18oVRrHj3c183mHmq3m89_163yuYltLNlOmPerQ18E8w/htmlview?sle=true#",
-        "parser": parse_states, 
-        "content_type": "html",
-        "action": "enabled",
-        "display_dups": False
-    },
-    { 
         "name": "google-states-csv", 
         "subfolder": "",
         "endpoint": "https://covid.cape.io/states/info.csv", 
         "content_type": "csv",
         "parser": parse_google_csv,
         "action": "enabled",
+        "display_dups": False
+    },
+    { 
+        "name": "google-states", 
+        "subfolder": "",
+        "endpoint": "https://docs.google.com/spreadsheets/d/18oVRrHj3c183mHmq3m89_163yuYltLNlOmPerQ18E8w/htmlview?sle=true#",
+        "parser": parse_states, 
+        "content_type": "html",
+        "action": "disabled",
         "display_dups": False
     },
     { 

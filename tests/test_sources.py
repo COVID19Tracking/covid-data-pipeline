@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath('..'))
 from change_list import ChangeList
 from directory_cache import DirectoryCache
 
-from url_source import UrlSource, UrlSources
+from url_source import UrlSource, UrlSources, load_one_source
 from url_source_validator import UrlSourceValidator
 from url_source_manager import UrlSourceManager
 from url_source_parsers import sources_config
@@ -58,6 +58,10 @@ def reformat(content: bytes, content_type: str) -> bytes:
 
 
 # ----
+def test_load_standalone():
+
+    src = load_one_source("google-states-csv")
+    logger.info(f"df =>>\n{src.df}")
 
 def test_load():
 
@@ -104,5 +108,6 @@ def test_alt():
 
 
 if __name__ == "__main__":
+    #test_load_standalone()
     test_load()
 
