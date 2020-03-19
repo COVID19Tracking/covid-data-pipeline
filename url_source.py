@@ -44,8 +44,8 @@ class UrlSource:
 
         self.previous = None
 
-        # no persisted
-        self.disable_for_run = False
+        # not persisted
+        self.enable_for_run = True
 
     def reset(self):
         self.df = None
@@ -139,25 +139,29 @@ class UrlSource:
 
     def check_mode(self, mode: str) -> bool:
 
-        self.disable_for_run = False
-        if self.status == "disabled":
-            self.disable_for_run = True
-            logger.warning(f"  skipping because status == disabled")
+        action_names = ["enabled", "disabled", "test"]
+
+        self.enable_for_run = True
+        if not self.action in action_names:
+            raise Exception(f"Invalid action ({self.action}), should be one of " + ", ".join(action_names))
+        elif self.action == "disabled":
+            self.enable_for_run = False
+            logger.warning(f"  skipping because action == disabled")
         if mode == "scan":
-            if self.status != "enabled" and self.status == None:
-                self.disable_for_run = True
-                logger.warning(f"  skipping because status != enabled ({self.status})")
+            if self.action != "enabled":
+                self.enable_for_run = False
+                logger.warning(f"  skipping because action != enabled ({self.action})")
         elif mode == "test":
-            if self.status != "test" and self.status == None:
-                self.disable_for_run = True
-                logger.warning(f"  skipping because status != test ({self.status})")
+            if not self.action in ["test", "enabled"] :
+                self.enable_for_run = False
+                logger.warning(f"  skipping because action != test ({self.action})")
         else:
             raise Exception(f"Unexpected mode: {mode}")
-        return self.disable_for_run
+        return self.enable_for_run
 
     def update_from_remote(self):
 
-        logger.info(f"update from remove {self.name}")
+        logger.info(f"update from remote {self.name}")
 
         self.reset()
 
