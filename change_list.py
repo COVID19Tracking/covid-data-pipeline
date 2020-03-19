@@ -251,10 +251,10 @@ class ChangeList:
             f.write(f"\n")
 
         with open(fn, "w") as f_changes:
-            f_changes.write(f"STATE CHANGE LIST\n\n")
-            f_changes.write(f"  start\t{self.start_date}\n")
-            f_changes.write(f"  end\t{self.end_date}\n")
-            f_changes.write(f"  previous\t{self.previous_date}\n")
+            f_changes.write(f"CHANGE LIST\n\n")
+            f_changes.write(f"  start\t{udatetime.to_displayformat(self.start_date)}\n")
+            f_changes.write(f"  end\t{udatetime.to_displayformat(self.end_date)}\n")
+            f_changes.write(f"  previous\t{udatetime.to_displayformat(self.previous_date)}\n")
             f_changes.write(f"  lapsed\t{self.time_lapsed}\n")
             f_changes.write(f"\n")
 

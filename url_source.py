@@ -154,12 +154,7 @@ class UrlSources():
         self.names = names
         self.items = items
 
-        df = pd.DataFrame({"names": names})
-        df["status"] = "new"
-        df["subfolder"] = [x.subfolder for x in items]
-        df["endpoint"] = [x.endpoint for x in items]
-        df["updated_at"] = udatetime.now_as_utc()
-        self.df_status = df
+        self.update_status()
 
 
     def make_source(self, x : Union[List, Dict]) -> UrlSource:
@@ -221,11 +216,15 @@ class UrlSources():
             logger.info(f"  no content")
 
     def update_status(self):
-        self.df_status.index = self.df_status.names
-        for x in self.items:
-            self.df_status.loc[x.name, "status"] = x.status
-            self.df_status.loc[x.name, "updated_at"] = x.updated_at 
-        self.df_status.reset_index(inplace=True, drop=True)
+        items = self.items
+        df = pd.DataFrame({
+            "names": [x.name for x in items],
+            "status": [x.status for x in items],
+            "subfolder": [x.subfolder for x in items],
+            "endpoint": [x.endpoint for x in items],
+            "updated_at": [udatetime.to_displayformat(x.updated_at) for x in items],
+        })
+        self.df_status = df
 
 # ----------------
 def dataframe_from_text(content: bytes) -> pd.DataFrame:
