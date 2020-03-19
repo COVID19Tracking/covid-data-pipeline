@@ -240,6 +240,8 @@ class HtmlExtracter:
 
         if self.trace: logger.info(f"input ===>\n{content}<===\n")
 
+        if content == None or len(content) == 0: return b''
+
         doc = html.fromstring(content)
         self.process_element(doc)
 
