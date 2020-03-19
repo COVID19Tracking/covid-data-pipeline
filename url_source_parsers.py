@@ -60,9 +60,10 @@ def clean_google_url(s: str) -> str:
 # ------------------------------------------
 def parse_google_csv(content: bytes) -> pd.DataFrame:
     df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+    print(df.columns)
     df["location"] = df["state"]
     df["main_page"] = df["covid19Site"].apply(clean_google_url) 
-    df["data_page"] = df["dataSite"].apply(clean_google_url) 
+    df["data_page"] = df["covid19SiteSecondary"].apply(clean_google_url) 
     return df
 
 # ------------------------------------------
