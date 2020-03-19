@@ -5,6 +5,10 @@ import sys
 import os
 import pandas as pd
 from lxml import html
+import re
+import json
+from loguru import logger
+
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -12,13 +16,15 @@ sys.path.insert(0, os.path.abspath('..'))
 from change_list import ChangeList
 from directory_cache import DirectoryCache
 
-from url_source import UrlSource, get_available_sources, dataframe_to_html
+from url_source import UrlSource, UrlSources
+from url_source_validator import UrlSourceValidator
+from url_source_manager import UrlSourceManager
+from url_source_parsers import sources_config
 
 urls = {}
 
-# ---- reformat html
-def reformat(content: bytes) -> bytes:
-
+# ---- reformat content
+def reformat_html(content: bytes) -> bytes:
     tree = html.fromstring(content)
     
     def indent(elem: html.Element, padding: str = "\n"):
@@ -38,58 +44,53 @@ def reformat(content: bytes) -> bytes:
 
     return html.tostring(tree)
 
+def reformat_json(content: bytes) -> bytes:
+
+    x = json.loads(content)
+    return json.dumps(x, indent = 2).encode()
+
+def reformat(content: bytes, content_type: str) -> bytes:
+
+    if content_type == "csv": return content
+    if content_type == "html": return reformat_html(content)
+    if content_type == "json": return reformat_json(content)
+    raise Exception(f"Unexpected content_type {content_type}")
+
+
 # ----
-def validate_location(location: str):
-    pass
-def validate_source(location: str):
-    pass
-def validate_url(kind: str, xurl: str):
-    pass
-
-def validate(r: pd.DataFrame):
-    location = r["location"]
-    source = r["source_name"]
-    general_url = r["main_page"]
-    data_url = r["data_page"]
-
-    validate_location(location)
-    validate_source(source)
-    validate_url("main_page", general_url)
-    validate_url("data_page", data_url)
-
 
 def test_load():
 
     cache = DirectoryCache("c:\\data\\tests\\sources")
-    change_list = ChangeList(cache)
-    change_list.load()
 
-    sources = get_available_sources()
-
+    manager = UrlSourceManager(cache)
+    manager.update_sources()
+    
+    sources = UrlSources()
+    sources.scan(sources_config)
+    sources.read(cache, "sources.txt")
+    
+    validator = UrlSourceValidator()
     for x in sources.items:
-        print(f"load {x.name} for {x.endpoint}")
-        raw_content = x.fetch()
-        df = x.parse(raw_content)         
+        print(f"source {x.name} for {x.endpoint}")
 
-        key = x.name.lower().replace(" ", "_") + ".html"
+        print(f"   validate {x.name} for {x.endpoint}")
+        if not validator.validate(x):
+            validator.display_status()
+            print("  not valid")
 
-        new_content = dataframe_to_html(df) 
-        prev_content = cache.read(key)
-
-        changed = False
-        if new_content != prev_content:
-            cache.write(key, new_content)
-            key_raw = key.replace(".html", "_raw." + x.content_type)
-            if key_raw.endswith(".html"): raw_content = reformat(raw_content)
-            cache.write(key_raw, raw_content)
-            changed = True
-
-        if not validate(df):
-            change_list.record_failed(key, x.name, x.endpoint, "validation failed")
-        elif changed:
-            change_list.record_changed(key, x.name, x.endpoint)
+        print(f"   reformat and save source data")
+        x.read(x.name, cache)
+        if x.content == None:
+            logger.warning("  could not read content")
         else:
-            change_list.record_unchanged(key, x.name, x.endpoint)
+            raw_content = reformat(x.content, x.content_type)
+            if raw_content != None:
+                key_raw = f"{x.name}_reformated.{x.content_type}"
+                cache.write(key_raw, raw_content)
+
+    sources.write(cache, "sources.txt")
+
 
 if __name__ == "__main__":
     test_load()

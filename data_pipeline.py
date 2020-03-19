@@ -139,6 +139,7 @@ class DataPipeline():
                 self.cache_extract.write(key, local_extract_content)
 
 
+
     def _main_loop(self, change_list: ChangeList) -> Dict[str, str]:
 
         def remove_duplicate_if_exists(location: str, source: str, other_state: str):
@@ -151,22 +152,6 @@ class DataPipeline():
             if self.config.capture_image:
                 c = self.get_capture()
                 c.remove(location)
-
-        def save_source_data_if_changed(name: str, endpoint: str,
-            df_config: pd.DataFrame, raw_content: bytes,
-            change_list: ChangeList):
-
-            key = f"source-{name}.html"
-            new_content = dataframe_to_html(df_config)
- 
-            old_content = self.cache_extract.read(key)
-            if old_content == new_content:
-                change_list.record_unchanged(key, name, endpoint)
-            else:
-                self.cache_extract.write(key, new_content)
-                self.cache_clean.write(key, new_content)
-                self.cache_raw.write(key, raw_content)
-                change_list.record_changed(key, name, endpoint)
 
         def fetch_if_changed(location: str, source: str, xurl: str, skip: bool = False) -> bool:
 
@@ -230,11 +215,7 @@ class DataPipeline():
                 return False
 
         # -- get states info from API
-        sources = get_available_sources()
-        df_config, endpoint_config, content_config = sources.load("google-states")
-        save_source_data_if_changed("source-google-states", endpoint_config, 
-            df_config, content_config, change_list)
-
+        df_config = get_source_data()
 
         # -- fetch pages
         skip = False
