@@ -205,6 +205,8 @@ class HtmlCleaner:
 
         self.to_remove = []
 
+        if content == None: return b''
+
         doc = html.fromstring(content)
         self.clean_element(doc)
 
@@ -223,7 +225,12 @@ class HtmlCleaner:
                 if len(x) == 0:
                     logger.warning("  cleaned document's body is empty")
 
-        out_content = html.tostring(doc, pretty_print=True)
+        try:
+            out_content = html.tostring(doc)
+        except Exception as ex:
+            logger.error(ex)
+            logger.error("lxml failed on converting document to text")
+            return b''
 
         if type(content) == str:
             out_content = out_content.decode()
