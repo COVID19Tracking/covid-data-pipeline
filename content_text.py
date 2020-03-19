@@ -69,18 +69,18 @@ def make_content_text(elem: html.Element) -> ContentText:
         #logger.info(f"make_content_text SKIP >>\n{html.tostring(elem)}<<\n")
         return None
 
-    should_check = False
-    if text != "":
-        if " case" in text or \
-           " potential " in text or \
-            re.search("[0-9]", text): should_check = True
-    if tail != "":
-        if " case" in tail or \
-           " potential " in tail or \
-            re.search("[0-9]", tail): should_check = True
-    if not should_check: 
-        #logger.info(f"make_content_text SKIP >>\n{html.tostring(elem)}<<\n")
-        return None
+    # should_check = False
+    # if text != "":
+    #     if " case" in text or \
+    #        " potential " in text or \
+    #         re.search("[0-9]", text): should_check = True
+    # if tail != "":
+    #     if " case" in tail or \
+    #        " potential " in tail or \
+    #         re.search("[0-9]", tail): should_check = True
+    # if not should_check: 
+    #     #logger.info(f"make_content_text SKIP >>\n{html.tostring(elem)}<<\n")
+    #     return None
 
     #logger.info(f"make_content_text MATCH >>\n{html.tostring(elem)}<<\n")
     return ContentText(elem, text, tail)
