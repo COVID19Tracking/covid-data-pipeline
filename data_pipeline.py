@@ -98,7 +98,7 @@ class DataPipeline():
             if self.sources == None:
                 raise Exception("Sources not provided")
             src = self.sources.items[0]
-            if src.name != "google-states":
+            if src.name != "google-states-csv":
                 raise Exception(f"Expected first source to be google-states, not {src.name}")
             return self._main_loop(src, self.change_list)
         except Exception as ex:
