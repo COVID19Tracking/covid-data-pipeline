@@ -134,7 +134,7 @@ def main(args_list=None):
         for idx, r in state_info_df.iterrows():
             # if idx > 1:
                 # break
-            state = r["state"]
+            state = r["location"]
             data_url = r["data_page"]
             screenshot_with_size_handling(state, data_url)
 
