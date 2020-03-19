@@ -240,6 +240,7 @@ class DataPipeline():
 
         # -- fetch pages
         skip = False
+        err_cnt = 0
 
         for idx, r in df_config.iterrows():
             location = r["location"]
@@ -255,13 +256,30 @@ class DataPipeline():
             if idx % 10 == 1: change_list.save_progress()
 
             if general_url != None:
-                fetch_if_changed(location, source, general_url, skip=skip)
+                try:
+                    fetch_if_changed(location, source, general_url, skip=skip)
+                except Exception as ex:
+                    err_cnt += 1
+                    if err_cnt > 10: break
+                    change_list.record_failed(location, source, general_url, "Exception in code")
+                    logger.exception(ex)
+                    logger.error("    error -> continue to next page")
+
             if data_url != None:
                 if general_url == data_url:
                     remove_duplicate_if_exists(location + "_data", source, location)
                 else:
-                    fetch_if_changed(location + "_data", source, data_url, skip=skip)
-            
+                    try:
+                        fetch_if_changed(location + "_data", source, data_url, skip=skip)
+                    except Exception as ex:
+                        err_cnt += 1
+                        if err_cnt > 10: break
+                        change_list.record_failed(location, source, general_url, "Exception in code")
+                        logger.exception(ex)
+                        logger.error("    error -> continue to next page")
+
+        if err_cnt > 10:
+            logger.error(f"  abort run due to {err_cnt} errors")        
 
         change_list.write_html_to_cache(self.cache_raw, "RAW")
         change_list.write_html_to_cache(self.cache_clean, "CLEAN")

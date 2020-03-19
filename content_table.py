@@ -114,11 +114,18 @@ class ContentTable():
             if x.tag != "td" and x.tag != "th":
                 if x.tag == etree.Comment: continue
                 if x.tag == "script": continue
-                # print(f"{html.tostring(x)}")
-                raise Exception(f"bad tag -- expected td/th, got {x.tag}")   
-                        
-            ch_elem, val = self._extract_any(x)
-            if ch_elem == None: ch_elem = html.Element(x.tag)
+
+                logger.warning(f"  adding td around {html.tostring(x)}")   
+                ch_elem = html.Element("td")
+                bad_elem, val = self._extract_any(x)
+                if bad_elem != None:
+                    ch_elem.append(bad_elem)
+                else:
+                    ch_elem.text = val
+            else:
+                ch_elem, val = self._extract_any(x)
+                if ch_elem == None: ch_elem = html.Element(x.tag)
+        
             ch_elem.tail = ""
             elem.append(ch_elem)
             cells.append(val)

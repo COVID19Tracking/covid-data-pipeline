@@ -76,7 +76,8 @@ class SpecializedCapture():
         if browser == None: raise Exception("Could not get browser")
 
         logger.info(f"    1. get content from {url}")
-        browser.get(url)
+        if not browser.get(url):
+            logger.info("  page timed out -> skip")
         
         logger.info(f"    2. wait for 5 seconds")
         time.sleep(5)
