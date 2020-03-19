@@ -77,6 +77,7 @@ class ChangeList:
         'error_message',
         'complete',
 
+        '_is_loaded',
         '_items',
         '_lookup',
 
@@ -95,14 +96,18 @@ class ChangeList:
 
         self.last_timestamp = ""
 
+        self._is_loaded = False
+
         self._items = []
         self._lookup = {}
 
     def load(self):
+        if self._is_loaded: return
         self._read_json()
+        self._is_loaded = True
 
     def start_run(self):
-        self._read_json()
+        self.load()
 
         self.previous_date = self.start_date
         self.start_date = udatetime.now_as_utc()

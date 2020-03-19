@@ -65,7 +65,18 @@ def test_load():
 
     manager = UrlSourceManager(cache)
     manager.update_sources()
-    
+
+    content = cache.read("sources.txt")
+    if content != None:
+        logger.info(f"sources:\n")
+        logger.info(content.decode())
+    else:
+        logger.error("no sources.txt file")
+
+
+def test_alt():    
+    cache = DirectoryCache("c:\\data\\tests\\sources")
+
     sources = UrlSources()
     sources.scan(sources_config)
     sources.read(cache, "sources.txt")

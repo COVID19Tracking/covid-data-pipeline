@@ -18,7 +18,7 @@ class GoogleSheet():
         self.menus = self._get_menu(self.tree) 
 
         names = [ x for x in self.menus ]
-        logger.info(f"  google sheet tabs: {names}")
+        #logger.info(f"  google sheet tabs: {names}")
 
     def get_tab(self, name: str) -> pd.DataFrame:
         " gets the a tab as a data frame"

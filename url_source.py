@@ -82,6 +82,8 @@ class UrlSource:
             self.status = "parse"
 
             df = self.parser(content)
+            if df is None:
+                raise Exception("parser did not return a data frame")
             df["source_name"] = self.name
             if not "data_page" in df.columns: df["data_page"] = ""
             if not "error_msg" in df.columns: df["error_msg"] = ""
@@ -105,12 +107,12 @@ class UrlSource:
         old_content = cache.read(key)
         if old_content != new_content:
             cache.write(key, new_content)
-            change_list.record_unchanged(name, "source", self.endpoint)
 
             key = f"{name}_source.{self.content_type}"
             cache.write(key, self.content)
-        else:
             change_list.record_changed(name, "source", self.endpoint)
+        else:
+            change_list.record_unchanged(name, "source", self.endpoint)
 
     def read(self, name: str, cache: DirectoryCache):
 
@@ -180,7 +182,9 @@ class UrlSources():
         missing = ~df.index.isin(self.names)
         if len(missing) > 0:
             df.loc[missing, "status"] = "removed"
+        df.reset_index(inplace=True, drop=True)
         self.df_status = df
+
 
     def write(self, cache: DirectoryCache, name: str):
         if not self.df_status is None:
@@ -200,24 +204,32 @@ class UrlSources():
         content = x.fetch()
         if content != None:
             df = x.parse(content)
-            logger.info(f"  found {df.shape[0]} records")
+            if not df is None:
+                logger.info(f"  found {df.shape[0]} records")
         else:
             logger.info(f"  no content")
 
-        self.df_status.loc[x.name, "status"] = x.status
-        self.df_status.loc[x.name, "updated_at"] = x.updated_at 
-
+    def update_status(self):
+        self.df_status.index = self.df_status.names
+        for x in self.items:
+            self.df_status.loc[x.name, "status"] = x.status
+            self.df_status.loc[x.name, "updated_at"] = x.updated_at 
+        self.df_status.reset_index(inplace=True, drop=True)
 
 # ----------------
 def dataframe_from_text(content: bytes) -> pd.DataFrame:
     if content == None: return None
 
     buffer = io.StringIO(content.decode())
-    return pd.read_csv(buffer, sep = "\t")
+    df = pd.read_csv(buffer, sep = "\t")
+    n = df.columns[0]
+    if n.startswith("Unnamed:"): del df[n]
+    return df
 
 def dataframe_to_text(df: pd.DataFrame) -> bytes:
     buffer = io.StringIO()
     df.reset_index(inplace=True, drop=True)
+    
     df.to_csv(buffer, sep = "\t")
     return buffer.getvalue().encode()
 

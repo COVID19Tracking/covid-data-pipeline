@@ -27,20 +27,25 @@ class UrlSourceManager():
         sources = UrlSources()
         sources.scan(sources_config)
         sources.read(self.cache, "sources.txt")
+        logger.info(f"  found {len(sources.items)} sources")
         
         validator = UrlSourceValidator()
         for src in sources.items:
             sources.update_from_remote(src.name)
             if validator.validate(src):
-                logger.info(f"   {src.name}: save")
+                src.status = "valid"
+                logger.info(f"     {src.name}: save")
                 src.write(src.name, self.cache, self.change_list)
-                logger.info(f"   {src.name}: updated from remote")
+                logger.info(f"     {src.name}: updated from remote")
             else:
+                src.status = "invalid"
                 validator.display_status()
                 if src.read(src.name, self.cache):
-                    logger.warning(f"   {src.name}: use local cache")
+                    logger.warning(f"     {src.name}: use local cache")
                 else:
                     self.change_list.record_failed(src.name, "source", src.endpoint, "no local cache")
-    
+        
+        sources.update_status() 
         sources.write(self.cache, "sources.txt")
+
         self.change_list.finish_run()

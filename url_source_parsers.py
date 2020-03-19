@@ -143,13 +143,11 @@ def parse_urlwatch(content: bytes) -> pd.DataFrame:
 
     df["location"] = df.name
     df["main_page"] = df.url.apply(clean_google_url) 
-    df["err_msg"] = ""
+    df["data_page"] = ""
+    df["error_msg"] = ""
 
-    df["abbrev"] = df.name.map(state_abrrevs)
-    missing = pd.isnull(df.abbrev)
-    df.loc[~missing, "location"] = df.abbrev
-    df.loc[missing, "err_msg"] = "bad abbrev"
-
+    # assign 2nd link to data page so we get only one record instead of two
+    # for mutiple links, treat it as a variant.
     names = {}
     for x in df.itertuples():
         cnt = names.get(x.name)
@@ -160,11 +158,23 @@ def parse_urlwatch(content: bytes) -> pd.DataFrame:
             df.iloc[x.Index, "data_page"] = x.main_page
             df.iloc[x.Index, "main_page"] = ""
             df.iloc[x.Index, "location"] += "_data"
-        elif cnt > 1:            
+        elif cnt > 1:
             df.iloc[x.Index, "main_page"] = ""
             df.iloc[x.Index, "location"] += f"_{cnt}"
 
-    return df
+    # apply state abbreviations
+    df["abbrev"] = df.name.map(state_abrrevs)
+    missing = pd.isnull(df.abbrev)
+    df.loc[~missing, "location"] = df.abbrev
+    df.loc[missing, "error_msg"] = "bad abbrev"
+
+    df_new = pd.DataFrame({
+        "location": df["location"],
+        "main_page": df["main_page"],
+        "data_page": df["data_page"],
+        "error_msg": df["error_msg"],
+    })    
+    return df_new
 
 # ------------------------------------------
 def parse_states(content: bytes) -> pd.DataFrame:
@@ -186,9 +196,10 @@ def parse_community_counties(content: bytes) -> pd.DataFrame:
     try:
 
         doc = html.fromstring(content)
-        #0-grid-table-container
         table = doc.find(".//table")
 
+
+        # data the columns out of an HTML table
         num_cols = 14 # outcome
         names = ["row"]
         cols = [[]]
@@ -271,7 +282,6 @@ def parse_cds(content: bytes) -> pd.DataFrame:
         "location": df.state + "." + df.county.apply(clean_name),
         "main_page": df.url
     })    
-    df_new["data_page"] = ""
     return df_new
 
 
