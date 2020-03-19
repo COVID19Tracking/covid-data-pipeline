@@ -74,12 +74,12 @@ class ContentTable():
 
             if x.tag == "tr":
                 self._extract_tr(x) 
-            elif x.tag == "thead" or x.tag == "tbody":
+            elif x.tag == "thead" or x.tag == "tbody" or x.tag == "tfoot":
                 for y in x:
                     if y.tag == "tr":
                         self._extract_tr(y) 
                     elif self.fail_on_unexpected_tags:
-                        raise Exception(f"unexpected tag: {y.tag}")
+                        raise Exception(f"unexpected tag in tr: {y.tag}")
                     else:
                         logger.warning(f"unexpected tag in tr: {html.tostring(y)}")
             elif x.tag == "colgroup":
@@ -88,8 +88,8 @@ class ContentTable():
             elif x.tag == "caption":
                 self._extract_caption(x)
             elif self.fail_on_unexpected_tags:
-                logger.warning(f"unexpected tag: {html.tostring(x)}")
-                raise Exception(f"unexpected tag: {x.tag}")
+                logger.warning(f"unexpected tag in table: {html.tostring(x)}")
+                raise Exception(f"unexpected tag in table: {x.tag}")
             else:
                 logger.warning(f"unexpected tag: {html.tostring(x)}")
         
@@ -164,7 +164,8 @@ class ContentTable():
             if y.tag == etree.Comment: continue
             if y.tag in ["script", "noscript", "br", "hr", "input", "img", "form"]: continue
 
-            if y.tag in ["span", "div", "h3", "h2", "h1", "small", "strong", "em", "sup", "a", "b", "u", "p", "ul", "label", "sub"]:
+            if y.tag in ["span", "div", "h3", "h2", "h1", "small", "strong", "em", "sup", "i", 
+                "a", "b", "u", "p", "ul", "label", "sub"]:
                 elem_ch, s = self._extract_any(y)
                 if elem_ch != None:
                     if len(x) == 1:
@@ -178,8 +179,17 @@ class ContentTable():
                 elem.append(html.Element(y.tag))
                 items.append(f"[{y.tag.upper()}]")
             else:
-                print(f"bad tag {y.tag} ===>{html.tostring(y)}<<====\n")
-                raise Exception(f"Unexpected tag: {y.tag}")
+                logger.warning(f"unexpected tag {y.tag} ===>{html.tostring(y)}<<====\n")
+                elem_ch, s = self._extract_any(y)
+                if elem_ch != None:
+                    if len(x) == 1:
+                        if s != None and s != "":
+                            elem.text = s
+                    else:
+                        elem.append(elem_ch)
+                if s != None and s != "":
+                    items.append(s)
+
         val = " ".join(items)
         return elem, val
 
