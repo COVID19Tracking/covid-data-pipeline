@@ -181,9 +181,12 @@ class HtmlCleaner:
         elif tag in ["a"]:
             if self.mark_special_case(elem):
                 return
-            #if elem.text != None:
-            #    elem.text = elem.text.strip()
-            elem.tail = None
+            
+            # strip spaces from simple links
+            if len(elem) > 0:
+                elem[-1].tail = None
+            elif elem.text != None:
+                elem.text = elem.text.strip()
 
         self.clean_attributes(elem)
 
