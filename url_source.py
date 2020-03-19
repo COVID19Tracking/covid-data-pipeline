@@ -20,8 +20,8 @@ import udatetime
 class UrlSource:
 
     def __init__(self, name: str, subfolder: str, 
-            endpoint: str, parser: Callable, content_type = "html",
-            display_dups: bool = False):
+            endpoint: str, parser: Callable, content_type,
+            action: str, display_dups: bool = False):
 
         # from config
         self.name = name
@@ -29,7 +29,8 @@ class UrlSource:
         self.endpoint = endpoint
         self.parser = parser
         self.content_type = content_type
-        self.display_dups = True
+        self.action = action
+        self.display_dups = display_dups
         
         # persistent to per-source files
         self.content = None
@@ -42,6 +43,9 @@ class UrlSource:
         self.error_at = None
 
         self.previous = None
+
+        # no persisted
+        self.disable_for_run = False
 
     def reset(self):
         self.df = None
@@ -133,6 +137,39 @@ class UrlSource:
         key = f"{name}_source.{self.content_type}"
         self.content = cache.read(key)
 
+    def check_mode(self, mode: str) -> bool:
+
+        self.disable_for_run = False
+        if self.status == "disabled":
+            self.disable_for_run = True
+            logger.warning(f"  skipping because status == disabled")
+        if mode == "scan":
+            if self.status != "enabled" and self.status == None:
+                self.disable_for_run = True
+                logger.warning(f"  skipping because status != enabled ({self.status})")
+        elif mode == "test":
+            if self.status != "test" and self.status == None:
+                self.disable_for_run = True
+                logger.warning(f"  skipping because status != test ({self.status})")
+        else:
+            raise Exception(f"Unexpected mode: {mode}")
+        return self.disable_for_run
+
+    def update_from_remote(self):
+
+        logger.info(f"update from remove {self.name}")
+
+        self.reset()
+
+        content = self.fetch()
+        if content != None:
+            df = self.parse(content)
+            if not df is None:
+                logger.info(f"  found {df.shape[0]} records")
+        else:
+            logger.info(f"  no content")
+
+
 # -------------------------------------------------
 class UrlSources():
 
@@ -157,25 +194,15 @@ class UrlSources():
         self.update_status()
 
 
-    def make_source(self, x : Union[List, Dict]) -> UrlSource:
-        if type(x) == list:
-            content_type, display_dups = "html", False 
-            if len(x) == 4:
-                name, subfolder, endpoint, parser = list(x)
-            elif len(x) == 5:
-                name, subfolder, endpoint, parser, content_type  = list(x)
-            elif len(x) == 6:
-                name, subfolder, endpoint, parser, content_type, display_dups = list(x)
-            else:
-                raise Exception("Invalid input list, should be: name, subfolder, endpoint, parser, [content_type], [display_dups]")
-        else:
-            x = dict(x)
-            name, subfolder, endpoint, parser, content_type, display_dups = \
-                x["name"], x.get("subfolder"), x["endpoint"], x["parser"], x.get("content_type"), x.get("display_dups")
-            if content_type == None: content_type = "html"
-            if display_dups == None: display_dups = False
+    def make_source(self, x : Dict) -> UrlSource:
+        name, subfolder, endpoint, parser, content_type, action, display_dups = \
+            x["name"], x.get("subfolder"), x["endpoint"], x["parser"], x.get("content_type"), \
+            x.get("action"), x.get("display_dups")
+        if content_type == None: content_type = "html"
+        if display_dups == None: display_dups = False
+        if action == None: action = ""
 
-        return UrlSource(name, subfolder, endpoint, parser, content_type, display_dups)
+        return UrlSource(name, subfolder, endpoint, parser, content_type, action, display_dups)
 
     def read(self, cache: DirectoryCache, name: str):
         if len(self.names) == 0: raise Exception("No sources")
@@ -196,24 +223,6 @@ class UrlSources():
         if not self.df_status is None:
             content = dataframe_to_text(self.df_status)
             cache.write(name, content)
-
-    def update_from_remote(self, name: str):
-
-        idx = self.names.index(name)
-        if idx < 0: raise Exception(f"Invalid name {name}, valid names are {self.names}")
-
-        logger.info(f"update {name}")
-        x = self.items[idx]
-
-        x.reset()
-
-        content = x.fetch()
-        if content != None:
-            df = x.parse(content)
-            if not df is None:
-                logger.info(f"  found {df.shape[0]} records")
-        else:
-            logger.info(f"  no content")
 
     def update_status(self):
         items = self.items

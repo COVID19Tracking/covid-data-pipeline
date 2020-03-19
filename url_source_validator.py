@@ -25,7 +25,7 @@ class UrlSourceValidator():
             self._msg.append(f"empty location")
         elif not re.match("[._A-Za-z0-9]+", location):
             self._msg.append(f"invalid location")
-        elif location.endswith("_data"):
+        elif location.endswith("_data"):            
             self._msg.append(f"location can't end with '_data'")
         else:
             parts = location.split(".")
@@ -40,6 +40,8 @@ class UrlSourceValidator():
         if xurl == None or xurl == "": return
         if not re.match("https?://.+", xurl):
             self._msg.append(f"invalid url {kind}: {xurl}")
+        if xurl.startswith("https://google.com") or xurl.startswith("https://www.google.com"):
+            self._msg.append("google is not allowed as an endpoint")
 
     def _validate_rows(self, name: str, df: pd.DataFrame) -> bool:
 

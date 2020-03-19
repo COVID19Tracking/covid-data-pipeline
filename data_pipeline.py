@@ -19,7 +19,9 @@ from directory_cache import DirectoryCache
 from change_list import ChangeList
 
 from url_manager import UrlManager
-from url_source import get_available_sources, dataframe_to_html
+
+from url_source import UrlSource, UrlSources
+from url_source_manager import UrlSourceManager
 
 from html_cleaner import HtmlCleaner
 from html_extracter import HtmlExtracter
@@ -49,12 +51,17 @@ class DataPipeline():
         self.change_list: ChangeList = None
 
         base_dir = config.base_dir
+
+        self.cache_sources = DirectoryCache(os.path.join(base_dir, "sources")) 
+
         self.cache_raw = DirectoryCache(os.path.join(base_dir, "raw")) 
         self.cache_clean = DirectoryCache(os.path.join(base_dir, "clean")) 
         self.cache_extract = DirectoryCache(os.path.join(base_dir, "extract")) 
         self.cache_diff = DirectoryCache(os.path.join(base_dir, "diff")) 
 
         self.url_manager = UrlManager()
+
+        self.sources: UrlSources = None
 
         self._capture: SpecializedCapture = None 
 
@@ -72,6 +79,11 @@ class DataPipeline():
                 self._capture.publish()
         self._capture = None
 
+    def update_sources(self):
+        " update the remote url sources "
+        manager = UrlSourceManager(self.cache_sources)
+        self.sources = manager.update_sources("scan")
+
     def process(self) -> Dict[str, str]:
         " run the pipeline "
 
@@ -83,7 +95,12 @@ class DataPipeline():
 
         self.change_list.start_run()
         try:
-            return self._main_loop(self.change_list)
+            if self.sources == None:
+                raise Exception("Sources not provided")
+            src = self.sources.items[0]
+            if src.name != "google-states":
+                raise Exception(f"Expected first source to be google-states, not {src.name}")
+            return self._main_loop(src, self.change_list)
         except Exception as ex:
             logger.exception(ex)
             self.change_list.abort_run(ex)
@@ -138,9 +155,7 @@ class DataPipeline():
                 local_extract_content = extracter.extract(local_clean_content, item)
                 self.cache_extract.write(key, local_extract_content)
 
-
-
-    def _main_loop(self, change_list: ChangeList) -> Dict[str, str]:
+    def _main_loop(self, source: UrlSource, change_list: ChangeList) -> Dict[str, str]:
 
         def remove_duplicate_if_exists(location: str, source: str, other_state: str):
             key = location + ".html"
@@ -152,6 +167,7 @@ class DataPipeline():
             if self.config.capture_image:
                 c = self.get_capture()
                 c.remove(location)
+
 
         def fetch_if_changed(location: str, source: str, xurl: str, skip: bool = False) -> bool:
 
@@ -214,8 +230,13 @@ class DataPipeline():
                 change_list.record_unchanged(key, source, xurl)
                 return False
 
-        # -- get states info from API
-        df_config = get_source_data()
+        # -- get urls to hit
+        if source.status != "valid":
+            raise Exception(f"URL source {source.name} status is not valid")
+
+        df_config = source.df
+        if df_config is None:
+            raise Exception(f"URL source {source.name} does not have any data loaded")
 
         # -- fetch pages
         skip = False

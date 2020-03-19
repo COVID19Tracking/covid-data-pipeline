@@ -64,7 +64,7 @@ def test_load():
     cache = DirectoryCache("c:\\data\\tests\\sources")
 
     manager = UrlSourceManager(cache)
-    manager.update_sources()
+    manager.update_sources("test")
 
     content = cache.read("sources.txt")
     if content != None:

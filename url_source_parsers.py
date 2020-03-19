@@ -185,8 +185,8 @@ def parse_states(content: bytes) -> pd.DataFrame:
     #print(f"columns = \n{df.columns}")
     df_new = pd.DataFrame({
         "location": df["State"],
-        "main_page": df["COVID-19 site"],
-        "data_page": df["Data site"],
+        "main_page": df["COVID-19 site"].apply(clean_google_url),
+        "data_page": df["Data site"].apply(clean_google_url),
     })    
     return df_new
 
@@ -301,6 +301,7 @@ sources_config = [
         "endpoint": "https://docs.google.com/spreadsheets/d/18oVRrHj3c183mHmq3m89_163yuYltLNlOmPerQ18E8w/htmlview?sle=true#",
         "parser": parse_states, 
         "content_type": "html",
+        "action": "enabled",
         "display_dups": False
     },
     { 
@@ -309,6 +310,7 @@ sources_config = [
         "endpoint": "https://covid.cape.io/states/info.csv", 
         "content_type": "csv",
         "parser": parse_google_csv,
+        "action": "enabled",
         "display_dups": False
     },
     { 
@@ -317,6 +319,7 @@ sources_config = [
         "endpoint": "https://covidtracking.com/api/urls", 
         "content_type": "json",
         "parser": parse_urlwatch,
+        "action": "enabled",
         "display_dups": False
     },
     { 
@@ -325,6 +328,7 @@ sources_config = [
         "endpoint": "http://blog.lazd.net/coronadatascraper/data.json",
         "parser": parse_cds, 
         "content_type": "json",
+        "action": "enabled",
         "display_dups": False
     },
     { 
@@ -333,6 +337,7 @@ sources_config = [
         "endpoint": "https://docs.google.com/spreadsheets/d/1T2cSvWvUvurnOuNFj2AMPGLpuR2yVs3-jdd_urfWU4c/edit#gid=1477768381",
         "content_type": "html",
         "parser": parse_community_counties, 
+        "action": "test",
         "display_dups": False
     }
 ]

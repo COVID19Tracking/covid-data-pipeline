@@ -17,7 +17,7 @@ class UrlSourceManager():
         self.cache = cache
         self.change_list = None
 
-    def update_sources(self) -> UrlSources:
+    def update_sources(self, mode: str) -> UrlSources:
 
         self.change_list = ChangeList(self.cache)
         self.change_list.load()
@@ -31,8 +31,12 @@ class UrlSourceManager():
         
         validator = UrlSourceValidator()
         for src in sources.items:
-            sources.update_from_remote(src.name)
+            if not src.check_mode(mode):
+                continue
+            
+            src.update_from_remote()
             src.write_parsed(src.name, self.cache)
+
             if validator.validate(src):
                 src.status = "valid"
                 logger.info(f"     {src.name}: save")
@@ -50,3 +54,4 @@ class UrlSourceManager():
         sources.write(self.cache, "sources.txt")
 
         self.change_list.finish_run()
+        return sources

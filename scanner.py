@@ -97,6 +97,7 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
     try:
         print("starting continuous run")
         if capture: special_cases(capture)
+        scanner.update_sources()
         scanner.process()
 
         if auto_push: util_git.push(scanner.config.base_dir, f"{udatetime.to_logformat(scanner.change_list.start_date)} on {host}")
@@ -117,6 +118,7 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
 
             try:
                 if capture: special_cases(capture)
+                scanner.update_sources()
                 scanner.process()
                 if auto_push: util_git.push(scanner.config.base_dir, f"{udatetime.to_displayformat(scanner.change_list.start_date)} on {host}")
             except Exception as ex:
@@ -134,6 +136,7 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
 
 
 def run_once(scanner: DataPipeline, auto_push: bool):
+    scanner.update_sources()
     scanner.process()
     if auto_push:
         host = get_host()
