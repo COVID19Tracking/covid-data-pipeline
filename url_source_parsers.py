@@ -248,6 +248,7 @@ def parse_community_counties(content: bytes) -> pd.DataFrame:
 
         df = df[df.Country == "USA"]
         df = df[~pd.isnull(df["Abbr."])]
+        df = df[df["Abbr."].str.strip() != ""]
         
         df_new = pd.DataFrame({
             "location": df["Abbr."],
@@ -270,16 +271,23 @@ def parse_cds(content: bytes) -> pd.DataFrame:
     df = df[~pd.isnull(df.county)]
 
     def clean_name(s: str) -> str:
-        if s == None or s == "": 
-            raise Exception("Missing County")
+        if s == None or s == "": return ""
         s = s.replace(" County", "")
+        s = s.replace(". ", "_")
+        s = s.replace(".", "_")
         s = s.replace(" ", "_")
+        s = s.replace("'", "")
+        s = s.replace(",", "_")
         return s
+
+    df["location"] = df.state + "." + df.county.apply(clean_name)
+
 
     #TODO: add population as a comment
 
+
     df_new = pd.DataFrame({
-        "location": df.state + "." + df.county.apply(clean_name),
+        "location": df.location,
         "main_page": df.url
     })    
     return df_new

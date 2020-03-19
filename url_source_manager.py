@@ -32,6 +32,7 @@ class UrlSourceManager():
         validator = UrlSourceValidator()
         for src in sources.items:
             sources.update_from_remote(src.name)
+            src.write_parsed(src.name, self.cache)
             if validator.validate(src):
                 src.status = "valid"
                 logger.info(f"     {src.name}: save")

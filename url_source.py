@@ -19,13 +19,13 @@ import udatetime
 # ------------------------------------
 class UrlSource:
 
-    def __init__(self, name: str, subdir: str, 
+    def __init__(self, name: str, subfolder: str, 
             endpoint: str, parser: Callable, content_type = "html",
             display_dups: bool = False):
 
         # from config
         self.name = name
-        self.subdir = subdir
+        self.subfolder = subfolder
         self.endpoint = endpoint
         self.parser = parser
         self.content_type = content_type
@@ -114,6 +114,15 @@ class UrlSource:
         else:
             change_list.record_unchanged(name, "source", self.endpoint)
 
+    def write_parsed(self, name: str, cache: DirectoryCache):
+
+        key = f"{name}_parsed.txt"
+        if self.df is None: 
+            cache.remove(key)
+        else:
+            content = dataframe_to_text(self.df)
+            cache.write(key, content)
+
     def read(self, name: str, cache: DirectoryCache):
 
         key = f"{name}_data.txt"
@@ -147,6 +156,8 @@ class UrlSources():
 
         df = pd.DataFrame({"names": names})
         df["status"] = "new"
+        df["subfolder"] = [x.subfolder for x in items]
+        df["endpoint"] = [x.endpoint for x in items]
         df["updated_at"] = udatetime.now_as_utc()
         self.df_status = df
 
@@ -155,21 +166,21 @@ class UrlSources():
         if type(x) == list:
             content_type, display_dups = "html", False 
             if len(x) == 4:
-                name, subdir, endpoint, parser = list(x)
+                name, subfolder, endpoint, parser = list(x)
             elif len(x) == 5:
-                name, subdir, endpoint, parser, content_type  = list(x)
+                name, subfolder, endpoint, parser, content_type  = list(x)
             elif len(x) == 6:
-                name, subdir, endpoint, parser, content_type, display_dups = list(x)
+                name, subfolder, endpoint, parser, content_type, display_dups = list(x)
             else:
-                raise Exception("Invalid input list, should be: name, subdir, endpoint, parser, [content_type], [display_dups]")
+                raise Exception("Invalid input list, should be: name, subfolder, endpoint, parser, [content_type], [display_dups]")
         else:
             x = dict(x)
-            name, subdir, endpoint, parser, content_type, display_dups = \
-                x["name"], x.get("subdir"), x["endpoint"], x["parser"], x.get("content_type"), x.get("display_dups")
+            name, subfolder, endpoint, parser, content_type, display_dups = \
+                x["name"], x.get("subfolder"), x["endpoint"], x["parser"], x.get("content_type"), x.get("display_dups")
             if content_type == None: content_type = "html"
             if display_dups == None: display_dups = False
 
-        return UrlSource(name, subdir, endpoint, parser, content_type, display_dups)
+        return UrlSource(name, subfolder, endpoint, parser, content_type, display_dups)
 
     def read(self, cache: DirectoryCache, name: str):
         if len(self.names) == 0: raise Exception("No sources")
