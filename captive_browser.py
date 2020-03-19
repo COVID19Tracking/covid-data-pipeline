@@ -18,11 +18,12 @@ def are_images_same(buffer1: bytes, buffer2: bytes) -> Tuple[bool, bytes]:
 
     diff = buffer1 - buffer2
     xmin, xmax = diff.min(), diff.max()
-    if xmin != xmax and xmin != 0 and xmax != 255.0:
-        scale = 255.0 / (xmax - xmin)
-        diff = ((diff - xmin) * scale).astype(np.uint8)
-        #h = np.histogram(diff)
-        #print(h)
+    if xmin != xmax:
+        if xmin != 0 and xmax != 255.0:
+            scale = 255.0 / (xmax - xmin)
+            diff = ((diff - xmin) * scale).astype(np.uint8)
+            #h = np.histogram(diff)
+            #print(h)
         return False, diff
     else:
         return True, None
