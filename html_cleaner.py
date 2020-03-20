@@ -11,20 +11,38 @@ class HtmlCleaner:
         self.to_remove = []
 
     def mark_special_case(self, elem: html.Element) -> bool:
-        " return element to remove "
+        " edit or return element to remove "
         # -- stupid special cases for CA
+        #if elem.tag == "div":
+        #    xid = elem.get("id")
+        #    if xid == "DeltaPlaceHolderPageDescription" or xid == "DeltaPlaceHolderPageTitleInTitleArea": 
+        #        logger.debug("special case: remove deltaplaceholder")
+        #        self.to_remove.append(elem.getparent())
+        #        return True
+        #elif elem.tag == "a":        
+        #    href = elem.get("href")
+        #    if href == "#ctl00_ctl65_SkipLink": 
+        #        logger.debug("special case: remove skiplink")
+        #        self.to_remove.append(elem.getparent())
+        #        return True
+
         if elem.tag == "div":
-            xid = elem.get("id")
-            if xid == "DeltaPlaceHolderPageDescription" or xid == "DeltaPlaceHolderPageTitleInTitleArea": 
-                logger.debug("special case: remove deltaplaceholder")
-                self.to_remove.append(elem.getparent())
-                return True
-        elif elem.tag == "a":        
-            href = elem.get("href")
-            if href == "#ctl00_ctl65_SkipLink": 
-                logger.debug("special case: remove skiplink")
-                self.to_remove.append(elem.getparent())
-                return True
+            xid = elem.attrib.get("id")
+            if xid == "google_translate_element" and len(elem)>0:
+                logger.debug("special case: google_translate_element")
+                return elem[0]
+            if xid != None:
+                xid2 = re.sub("^[0-9a-fA-F]+-(.*)",  "\\1", xid) 
+                xid2 = re.sub("(.*)-[a-z]?[0-9a-fA-F]+$",  "\\1", xid2) 
+                if xid != xid2: 
+                    logger.debug("special case: hex data in id")
+                    elem.attrib["id"] = xid2
+
+            if elem.attrib.get("fb-xfbml-state"):
+                logger.debug("special case: fb")
+                return elem
+
+
         return False
 
     def is_guid(self, xid: str) -> bool:
@@ -142,7 +160,7 @@ class HtmlCleaner:
     def clean_element(self, elem : html.Element):
 
         tag = elem.tag
-        if tag in ["script", "noscript", "style", "meta", "input", "link", "img", "font"]:
+        if tag in ["script", "noscript", "style", "meta", "input", "iframe", "select", "link", "font"]:
             elem.getparent().remove(elem)
             return
         if tag == etree.Comment:
