@@ -4,18 +4,24 @@
 import sys
 import os
 
+from loguru import logger
+
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 
-from url_source import UrlSource, get_available_sources
+from directory_cache import DirectoryCache
+from url_source import UrlSource
+from url_source_manager import UrlSourceManager
 
 def test_load():
 
-    sources = get_available_sources()
+    cache_sources = DirectoryCache("c:\\temp\\sources")
 
-    for x in sources:
-        print(f"load {x.name}")
-        x.load()
+    manager = UrlSourceManager(cache_sources)
+    sources = manager.update_sources("test")
+
+    logger.info("if your source was loaded and it didn't print error, it should be fine")
+
 
 if __name__ == "__main__":
     test_load()
