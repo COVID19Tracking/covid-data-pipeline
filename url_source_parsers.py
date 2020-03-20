@@ -187,7 +187,7 @@ def parse_states(content: bytes) -> pd.DataFrame:
     df_new = pd.DataFrame({
         "location": df["State"],
         "main_page": df["COVID-19 site"].apply(clean_google_url),
-        "data_page": df["Data site"].apply(clean_google_url),
+        "data_page": df["COVID-19 site (secondary)"].apply(clean_google_url),
     })    
     return df_new
 
