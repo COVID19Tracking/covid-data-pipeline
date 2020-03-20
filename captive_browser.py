@@ -30,25 +30,32 @@ def are_images_same(buffer1: bytes, buffer2: bytes) -> Tuple[bool, bytes]:
 
 class CaptiveBrowser:
 
-    def __init__(self):
+    def __init__(self, browser = "firefox"):
+
+        logger.debug(f"start {browser}")
 
         # setup:
         #   1. install firefox
         #   2. install geckodriver: https://github.com/mozilla/geckodriver/releases
         #   3. [windows] install V++ runtime libs: https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 
-        # use FireFox. Chrome is jittery
-        options = webdriver.FirefoxOptions()
-        options.add_argument('--headless')
-        self.driver = webdriver.Firefox(options=options)
+        # use FireFox by default. Chrome is jittery
+        if browser == "firefox":
+            options = webdriver.FirefoxOptions()
+            #options.add_argument('--headless')
+            self.driver = webdriver.Firefox(options=options)
+        elif browser == "chrome":
+            options = webdriver.ChromeOptions()
+            options.add_argument('headless')
+            self.driver = webdriver.Chrome(options=options)
+        else:
+            raise Exception(f"Unknown browser: {browser}")
 
         self.driver.set_window_size(1366, 2400)
-        #options = webdriver.ChromeOptions()
-        #options.add_argument('headless')
-        #self.driver = webdriver.Chrome(options=options)
 
-    def get(self, url: str) -> bool:
+    def navigate(self, url: str) -> bool:
         try:
+            logger.debug(f"navigate to {url}")
             self.driver.get(url)
             return True
         except Exception as ex:
@@ -62,8 +69,13 @@ class CaptiveBrowser:
         if wait_for != None:
             w.until(wait_for)
 
-    def page_source(self):
-        return self.driver.page_source
+    def page_source(self) -> bytes:
+        src = self.driver.page_source
+        if src == None: return b''
+        return src.encode()
+
+    def status_code(self) -> int:
+        return 200
 
 # -- out of place
 #    def post_to_remote_cache(self, id: str, owner: str, content: bytes):

@@ -8,7 +8,7 @@ from loguru import logger
 import pandas as pd
 import io
 
-from util import fetch
+from util import fetch_with_requests
 from directory_cache import DirectoryCache
 from change_list import ChangeList
 
@@ -58,13 +58,13 @@ class UrlSource:
         if self.previous == None: return
         self.status, self.updated_at, self.error_msg, self.error_at = self.previous
 
-    def fetch(self) -> bytes:
+    def fetch_with_requests(self) -> bytes:
         logger.info(f"  fetch {self.endpoint} for {self.name}")
         try:
             self.status = "fetch"
             self.updated_at = udatetime.now_as_utc()
 
-            content, status = fetch(self.endpoint)
+            content, status = fetch_with_requests(self.endpoint)
             if status >= 300:
                 raise Exception(f"Could not load {self.endpoint} for source {self.name}")
             if content == None:
@@ -165,7 +165,7 @@ class UrlSource:
 
         self.reset()
 
-        content = self.fetch()
+        content = self.fetch_with_requests()
         if content != None:
             df = self.parse(content)
             if not df is None:

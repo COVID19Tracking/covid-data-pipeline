@@ -29,11 +29,15 @@ parser = ArgumentParser(
     formatter_class=RawDescriptionHelpFormatter)
 
 parser.add_argument(
+    '-f', '--format', dest='format_html', action='store_true', default=False,
+    help='run the html formater (only)')
+parser.add_argument(
     '-c', '--clean', dest='clean_html', action='store_true', default=False,
     help='run the html cleaner (only)')
 parser.add_argument(
     '-x', '--extract', dest='extract_html', action='store_true', default=False,
     help='run the html extractor (only)')
+
 parser.add_argument('--trace', dest='trace', action='store_true', default=False,
     help='turn on tracing')
 parser.add_argument('-a', '--auto_push', dest='auto_push', action='store_true', default=False,
@@ -44,10 +48,14 @@ parser.add_argument('--continuous', dest='continuous', action='store_true', defa
     help='Run at 0:05 and 0:35')
 parser.add_argument('--auto_update', dest='auto_update', action='store_true', default=False,
     help='Pull changes and restart if source has changed')
-parser.add_argument('-i', '--image', dest='capture_image', action='store_true', default=False,
-    help='capture image after each change')
 parser.add_argument('--guarded', dest='guarded', action='store_true', default=False)
 
+parser.add_argument('--firefox', dest='use_firefox', action='store_true', default=False,
+    help='capture using firefox')
+parser.add_argument('--chrome', dest='use_chrome', action='store_true', default=False,
+    help='capture using chrome')
+parser.add_argument('-i', '--image', dest='capture_image', action='store_true', default=False,
+    help='capture image after each change')
 # data dir args
 config = configparser.ConfigParser()
 if os.path.exists("data_pipeline.local.ini"):
@@ -164,19 +172,24 @@ def main(args_list=None):
         "trace": args.trace,
         "capture_image": args.capture_image,
         "rerun_now": args.rerun_now,
+        "firefox": args.use_firefox,
+        "chrome": args.use_chrome
     })
     scanner = DataPipeline(config)
 
     capture = init_specialized_capture(args)
 
-    if args.clean_html or args.extract_html:
+    if args.clean_html or args.extract_html or arg.format_html:
+        if args.format_html: scanner.format_html(rerun=True)
         if args.clean_html: scanner.clean_html(rerun=True)
         if args.extract_html: scanner.extract_html(rerun=True)
     elif args.continuous:
+        scanner.format_html()
         scanner.clean_html()
         scanner.extract_html()
         run_continuous(scanner, capture, auto_push = args.auto_push)  
     else:        
+        scanner.format_html()
         scanner.clean_html()
         scanner.extract_html()
         run_once(scanner, args.auto_push)

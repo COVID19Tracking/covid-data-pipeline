@@ -12,7 +12,7 @@ import udatetime
 
 urllib3.disable_warnings() 
 
-def fetch(page: str) -> [bytes, int]:
+def fetch_with_requests(page: str) -> [bytes, int]:
     #print(f"fetch {page}")
     try:
         resp = requests.get(page, verify=False, timeout=30)
