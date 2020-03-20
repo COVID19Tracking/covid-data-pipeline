@@ -49,6 +49,25 @@ parser.add_argument('--replace-most-recent-snapshot', action='store_true', defau
 _PUBLIC_STATE_URL = 'https://covidtracking.com/data/'
 _STATES_LARGER_WINDOWS = ['DE', 'IN', 'MA', 'NC', 'OK']
 
+from udatetime import now_as_utc
+from util import convert_python_to_json
+import json
+
+class S3Log():
+    def __init__(self):
+        self.items = []
+
+    def record(self, name: str, url: str, status: str):
+        self.items.append({
+            "name": name,
+            "url": url,
+            "status": status,
+            "at": now_as_utc(),
+        })
+
+    def save(self, path: str):
+        convert_python_to_json(self.items)
+        json.dump(path)
 
 class S3Backup():
 
@@ -153,12 +172,18 @@ def main(args_list=None):
             screenshot_with_size_handling(state, data_url)
 
     else:
+        log = S3Log()
+
         for idx, r in state_info_df.iterrows():
             # if idx > 1:
                 # break
             state = r["location"]
             data_url = r["data_page"]
             screenshot_with_size_handling(state, data_url)
+
+            log.record(state, data_url, "ok")
+
+        log.save("log.json")
 
     if failed_states:
         logger.error(f"Failed states for this run: {','.join(failed_states)}")
