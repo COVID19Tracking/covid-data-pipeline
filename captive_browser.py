@@ -59,7 +59,7 @@ class CaptiveBrowser:
     def navigate(self, url: str) -> bool:
         try:
             logger.debug(f"navigate to {url}")
-            self.driver.get(url)
+            self.driver.navigate(url)
             self.current_url = url
             return True
         except Exception as ex:

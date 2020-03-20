@@ -107,6 +107,7 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
     try:
         print("starting continuous run")
 
+        scanner.update_sources()
         scanner.process()
 
         if capture: 
