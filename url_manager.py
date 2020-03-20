@@ -7,6 +7,7 @@
 from util import fetch_with_requests
 from typing import Tuple
 from loguru import logger
+import time
 
 from captive_browser import CaptiveBrowser
 
@@ -30,16 +31,13 @@ class UrlManager:
             self._captive.close()
             self._captive = None
 
-    def fetch_with_firefox(self, url: str) -> Tuple[bytes, int]:
+    def fetch_with_captive(self, url: str) -> Tuple[bytes, int]:
         if self._captive == None:
-            self._captive = CaptiveBrowser("firefox")
+            self._captive = CaptiveBrowser(self.browser)
         self._captive.navigate(url)
-        return self._captive.page_source(), self._captive.status_code()
-
-    def fetch_with_chrome(self, url: str) -> Tuple[bytes, int]:
-        if self._captive == None:
-            self._captive = CaptiveBrowser("chrome")
-        self._captive.navigate(url)
+        if self._captive.has_slow_elements():
+            logger.debug(f"  found slow elements, wait for 5 seconds")
+            time.sleep(5)
         return self._captive.page_source(), self._captive.status_code()
 
 
@@ -50,10 +48,8 @@ class UrlManager:
 
         if self.browser == "requests":
             content, status = fetch_with_requests(url)
-        elif self.browser == "firefox":
-            content, status = self.fetch_with_firefox(url)
-        elif self.browser == "chrome":
-            content, status = self.fetch_with_chrome(url)
+        else:
+            content, status = self.fetch_with_captive(url)
 
         self.history[url] = (content, status)
         if content != None:

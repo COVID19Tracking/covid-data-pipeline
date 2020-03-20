@@ -162,7 +162,7 @@ class ContentTable():
         for y in x:
             #ignore/strip out layout tags
             if y.tag == etree.Comment: continue
-            if y.tag in ["script", "noscript", "br", "hr", "input", "img", "form"]: continue
+            if y.tag in ["script", "noscript", "br", "hr", "input", "button", "svg", "img", "form"]: continue
 
             if y.tag in ["span", "div", "h3", "h2", "h1", "small", "strong", "em", "sup", "i", 
                 "a", "b", "u", "p", "ul", "label", "sub"]:

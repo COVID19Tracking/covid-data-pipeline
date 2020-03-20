@@ -4,6 +4,7 @@ from typing import Callable, Tuple
 
 from selenium import webdriver
 from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.by import By
 
 import imageio
 import time
@@ -32,6 +33,8 @@ class CaptiveBrowser:
 
     def __init__(self, browser = "firefox"):
 
+        self.current_url = None
+
         logger.debug(f"start {browser}")
 
         # setup:
@@ -57,13 +60,29 @@ class CaptiveBrowser:
         try:
             logger.debug(f"navigate to {url}")
             self.driver.get(url)
+            self.current_url = url
             return True
         except Exception as ex:
             logger.error(ex)
             s = str(ex)
             if "Timeout loading page" in s: return False
             raise ex
-    
+
+    def has_slow_elements(self) -> bool:
+        if ".arcgis.com" in self.current_url: return True
+
+        xobjects = self.driver.find_elements(By.XPATH, '//object')        
+        if len(xobjects) > 0: return True        
+        return False
+
+    def has_gis_link(self) -> bool:
+        #https://alpublichealth.maps.arcgis.com/apps/opsdashboard/index.html#/6d2771faa9da4a2786a509d82c8cf0f7
+        xobjects = self.driver.find_elements(By.XPATH, "//a[contains(@href,'.arcgis.com']")        
+        if len(xobjects) > 0: return True        
+        return False
+
+
+
     def wait(self, secs: int, wait_for: Callable = None):
         w = WebDriverWait(self.driver, secs)
         if wait_for != None:

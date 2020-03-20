@@ -133,7 +133,7 @@ class DataPipeline():
                 logger.info(f"  format {key}")
                 local_raw_content =  self.cache_raw.read(key)
                 formater = HtmlFormater()
-                local_clean_content = formater.format(local_raw_content)
+                local_clean_content = formater.format(None, local_raw_content)
                 self.cache_raw.write(key, local_clean_content)
 
     def clean_html(self, rerun=False):
@@ -229,6 +229,9 @@ class DataPipeline():
 
             remote_raw_content = remote_raw_content.replace(b"\r", b"")
 
+            formater = HtmlFormater()
+            remote_raw_content = formater.format(xurl, remote_raw_content)
+
             local_clean_content =  self.cache_clean.read(key)
             cleaner = HtmlCleaner()
             remote_clean_content = cleaner.clean(remote_raw_content)
@@ -239,8 +242,10 @@ class DataPipeline():
                 self.cache_clean.write(key, remote_clean_content)
                 change_list.record_changed(key, source, xurl)
 
-
                 item = change_list.get_item(key)
+
+                formatter = HtmlFormater()
+                remote_raw_content = formatter.format(xurl, remote_raw_content)
 
                 extracter = HtmlExtracter()
                 remote_extract_content = extracter.extract(remote_clean_content, item)
