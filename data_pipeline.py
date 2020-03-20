@@ -23,6 +23,7 @@ from url_manager import UrlManager
 from url_source import UrlSource, UrlSources
 from url_source_manager import UrlSourceManager
 
+from html_formater import HtmlFormater
 from html_cleaner import HtmlCleaner
 from html_extracter import HtmlExtracter
 
@@ -42,6 +43,13 @@ class DataPipelineConfig():
         self.capture_image = flags["capture_image"]
         self.rerun_now = flags["rerun_now"]
 
+        if flags.get("firefox"):
+            self.browser = "firefox"
+        elif flags.get("chrome"):
+            self.browser = "chrome"
+        else:
+            self.browser = "requests"
+
 class DataPipeline():
 
     def __init__(self, config: DataPipelineConfig):
@@ -59,7 +67,7 @@ class DataPipeline():
         self.cache_extract = DirectoryCache(os.path.join(base_dir, "extract")) 
         self.cache_diff = DirectoryCache(os.path.join(base_dir, "diff")) 
 
-        self.url_manager = UrlManager()
+        self.url_manager = UrlManager(config.browser)
 
         self.sources: UrlSources = None
 
@@ -99,7 +107,7 @@ class DataPipeline():
                 raise Exception("Sources not provided")
             src = self.sources.items[0]
             if src.name != "google-states-csv":
-                raise Exception(f"Expected first source to be google-states, not {src.name}")
+                raise Exception(f"Expected first source to be google-states-csv, not {src.name}")
             return self._main_loop(src, self.change_list)
         except Exception as ex:
             logger.exception(ex)
@@ -112,6 +120,22 @@ class DataPipeline():
             logger.info(f"  [in-memory content cache took {self.url_manager.size*1e-6:.1f} MBs")
             logger.info(f"run finished on {host} at {udatetime.to_logformat(self.change_list.start_date)}")
             
+    def format_html(self, rerun=False):
+        " format raw html "
+        is_first = False
+        for key in self.cache_raw.list_html_files():
+            if key == "index.html": continue
+            if key == "google_sheet.html": continue
+            if rerun or not self.cache_raw.exists(key):
+                if is_first:
+                    logger.info(f"format existing files...")
+                    is_first = False
+                logger.info(f"  format {key}")
+                local_raw_content =  self.cache_raw.read(key)
+                formater = HtmlFormater()
+                local_clean_content = formater.format(local_raw_content)
+                self.cache_raw.write(key, local_clean_content)
+
     def clean_html(self, rerun=False):
         " generate clean files from existing raw html "
         is_first = False

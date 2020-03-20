@@ -179,7 +179,7 @@ def main(args_list=None):
 
     capture = init_specialized_capture(args)
 
-    if args.clean_html or args.extract_html or arg.format_html:
+    if args.clean_html or args.extract_html or args.format_html:
         if args.format_html: scanner.format_html(rerun=True)
         if args.clean_html: scanner.clean_html(rerun=True)
         if args.extract_html: scanner.extract_html(rerun=True)
