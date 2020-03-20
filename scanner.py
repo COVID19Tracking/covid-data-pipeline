@@ -54,6 +54,8 @@ parser.add_argument('--firefox', dest='use_firefox', action='store_true', defaul
     help='capture using firefox')
 parser.add_argument('--chrome', dest='use_chrome', action='store_true', default=False,
     help='capture using chrome')
+parser.add_argument('--show_browser', dest='show_browser', action='store_true', default=False,
+    help='show browser while running')
 parser.add_argument('-i', '--image', dest='capture_image', action='store_true', default=False,
     help='capture image after each change')
 # data dir args
@@ -104,6 +106,9 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
     host = get_host()
     try:
         print("starting continuous run")
+
+        scanner.process()
+
         if capture: 
             try:
                 special_cases(capture)
@@ -111,8 +116,6 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
                 logger.error(ex)
                 logger.error("*** continue after exception in specialized capture")
 
-
-        scanner.process()
 
         if auto_push: util_git.push(scanner.config.base_dir, f"{udatetime.to_logformat(scanner.change_list.start_date)} on {host}")
         if util_git.monitor_check(): return
@@ -131,9 +134,9 @@ def run_continuous(scanner: DataPipeline, capture: SpecializedCapture, auto_push
             print("==================================")
 
             try:
-                if capture: special_cases(capture)
                 scanner.update_sources()
                 scanner.process()
+                if capture: special_cases(capture)
                 if auto_push: util_git.push(scanner.config.base_dir, f"{udatetime.to_displayformat(scanner.change_list.start_date)} on {host}")
             except Exception as ex:
                 logger.exception(ex)
@@ -173,7 +176,8 @@ def main(args_list=None):
         "capture_image": args.capture_image,
         "rerun_now": args.rerun_now,
         "firefox": args.use_firefox,
-        "chrome": args.use_chrome
+        "chrome": args.use_chrome,
+        "headless": not args.show_browser,
     })
     scanner = DataPipeline(config)
 

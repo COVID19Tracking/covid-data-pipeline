@@ -43,6 +43,8 @@ class DataPipelineConfig():
         self.capture_image = flags["capture_image"]
         self.rerun_now = flags["rerun_now"]
 
+        self.headless = flags["headless"]
+
         if flags.get("firefox"):
             self.browser = "firefox"
         elif flags.get("chrome"):
@@ -67,7 +69,7 @@ class DataPipeline():
         self.cache_extract = DirectoryCache(os.path.join(base_dir, "extract")) 
         self.cache_diff = DirectoryCache(os.path.join(base_dir, "diff")) 
 
-        self.url_manager = UrlManager(config.browser)
+        self.url_manager = UrlManager(config.headless, config.browser)
 
         self.sources: UrlSources = None
 
@@ -77,7 +79,7 @@ class DataPipeline():
         if self._capture == None:
             publish_dir = os.path.join(self.config.base_dir, 'captive-browser')
             self._capture = SpecializedCapture(
-                self.config.temp_dir, publish_dir)
+                self.config.temp_dir, publish_dir, self.url_manager._captive)
         return self._capture
 
     def shutdown_capture(self):

@@ -31,7 +31,7 @@ def are_images_same(buffer1: bytes, buffer2: bytes) -> Tuple[bool, bytes]:
 
 class CaptiveBrowser:
 
-    def __init__(self, browser = "firefox"):
+    def __init__(self, headless: bool = True, browser = "firefox"):
 
         self.current_url = None
 
@@ -45,11 +45,11 @@ class CaptiveBrowser:
         # use FireFox by default. Chrome is jittery
         if browser == "firefox":
             options = webdriver.FirefoxOptions()
-            #options.add_argument('--headless')
+            if headless: options.add_argument('--headless')
             self.driver = webdriver.Firefox(options=options)
         elif browser == "chrome":
             options = webdriver.ChromeOptions()
-            options.add_argument('headless')
+            if headless: options.add_argument('headless')
             self.driver = webdriver.Chrome(options=options)
         else:
             raise Exception(f"Unknown browser: {browser}")

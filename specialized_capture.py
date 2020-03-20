@@ -17,7 +17,7 @@ import udatetime
 
 class SpecializedCapture():
 
-    def __init__(self, temp_dir: str, publish_dir: str):
+    def __init__(self, temp_dir: str, publish_dir: str, driver: CaptiveBrowser = None):
         self.temp_dir = temp_dir
         self.publish_dir = publish_dir
 
@@ -25,7 +25,8 @@ class SpecializedCapture():
         self.cache = DirectoryCache(os.path.join(publish_dir))
 
         self.changed = False
-        self._browser: CaptiveBrowser = None
+        self._is_internal_browser = driver is None
+        self._browser: CaptiveBrowser = driver
 
     def get_browser(self) -> CaptiveBrowser:
         if self._browser != None: return self._browser
@@ -36,7 +37,7 @@ class SpecializedCapture():
         return self._browser
 
     def close(self):
-        if self._browser:
+        if self._browser and self._is_internal_browser:
             logger.info("  [stop captive browser]")
             self._browser.close()
             atexit.unregister(self._browser.close)

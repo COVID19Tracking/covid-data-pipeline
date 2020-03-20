@@ -13,10 +13,11 @@ from captive_browser import CaptiveBrowser
 
 class UrlManager:
 
-    def __init__(self, browser="requests"):
+    def __init__(self, headless=True, browser="requests"):
         self.history = {}
         self.size = 0
         self.browser = browser
+        self.headless = headless
         self._captive = None
 
     def is_repeat(self, url: str) -> bool:
@@ -33,7 +34,7 @@ class UrlManager:
 
     def fetch_with_captive(self, url: str) -> Tuple[bytes, int]:
         if self._captive == None:
-            self._captive = CaptiveBrowser(self.browser)
+            self._captive = CaptiveBrowser(self.headless, self.browser)
         self._captive.navigate(url)
         if self._captive.has_slow_elements():
             logger.debug(f"  found slow elements, wait for 5 seconds")
