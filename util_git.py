@@ -28,8 +28,10 @@ def push(git_dir: str, commit_msg: str):
         if not os.path.exists(".git"): raise Exception("Missing .git directory")
 
         
-        logger.info(f"git commit -a -m {commit_msg}")
-        subprocess.call(["git", "commit", "-a", "-m", commit_msg])
+        logger.info(f"git add --all .")
+        subprocess.call(["git", "add", "-all", "."])
+        logger.info(f"git commit -m {commit_msg}")
+        subprocess.call(["git", "commit", "-m", commit_msg])
         logger.info("git push")
         subprocess.call(["git", "push"])
 
