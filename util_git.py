@@ -29,7 +29,7 @@ def push(git_dir: str, commit_msg: str):
 
         
         logger.info(f"git add --all .")
-        subprocess.call(["git", "add", "-all", "."])
+        subprocess.call(["git", "add", "--all", "."])
         logger.info(f"git commit -m {commit_msg}")
         subprocess.call(["git", "commit", "-m", commit_msg])
         logger.info("git push")
