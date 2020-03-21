@@ -131,6 +131,6 @@ def require_utc(dt: datetime) -> datetime:
             if is_isoformated(dt):
                 raise Exception(f"value ({dt}) is a str containing an isoformated date")
         raise Exception(f"type ({type(dt)}) is not datetime")
-    if dt.tzinfo != pytz.UTC:
+    if dt.tzname() != "UTC":
         raise Exception(f"value ({dt}, dt.tzname={dt.tzname()}) is not UTC")
     return dt
