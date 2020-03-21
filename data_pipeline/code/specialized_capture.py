@@ -8,12 +8,12 @@ import shutil
 from loguru import logger
 import atexit
 
-from captive_browser import CaptiveBrowser, are_images_same
-from directory_cache import DirectoryCache
+from .captive_browser import CaptiveBrowser, are_images_same
+from .directory_cache import DirectoryCache
 
-from util import get_host
-import util_git
-import udatetime
+from .shared.util import get_host
+from .shared import util_git
+from .shared import udatetime
 
 class SpecializedCapture():
 

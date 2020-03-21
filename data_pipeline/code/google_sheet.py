@@ -17,7 +17,7 @@ class GoogleSheet():
         self.tree = html.fromstring(content)
         self.menus = self._get_menu(self.tree) 
 
-        names = [ x for x in self.menus ]
+        #names = [ x for x in self.menus ]
         #logger.info(f"  google sheet tabs: {names}")
 
     def get_tab(self, name: str) -> pd.DataFrame:

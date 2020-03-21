@@ -4,11 +4,7 @@
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('..'))
-
-from lxml import html
-from html_cleaner import HtmlCleaner
+from ..code.html_cleaner import HtmlCleaner
 
 def try_one(s_in: str):
     cleaner = HtmlCleaner(trace=True)

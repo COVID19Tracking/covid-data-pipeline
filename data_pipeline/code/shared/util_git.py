@@ -7,7 +7,6 @@ import signal
 import sys
 import time
 
-import util_git
 
 def is_python_code_dir(xdir: str) -> bool:
     python_test_dir = os.path.join(xdir, "__pycache__")
@@ -141,8 +140,8 @@ def monitor_check() -> bool:
     for x in sys.argv[1:]:
         if x == "--guarded":
             logger.info("check for source changes...")
-            if util_git.isbehind(): 
+            if isbehind(): 
                 logger.info("pull new sources...")
-                util_git.pull()
+                pull()
                 return True 
     return False

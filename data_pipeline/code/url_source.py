@@ -8,13 +8,12 @@ from loguru import logger
 import pandas as pd
 import io
 
-from util import fetch_with_requests
-from directory_cache import DirectoryCache
-from change_list import ChangeList
+from .shared.util import fetch_with_requests
+from .directory_cache import DirectoryCache
+from .change_list import ChangeList
+from .url_source_parsers import sources_config
 
-from url_source_parsers import sources_config
-
-import udatetime
+from .shared import udatetime
 
 # ------------------------------------
 class UrlSource:

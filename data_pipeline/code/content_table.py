@@ -1,11 +1,12 @@
 # OBSOLETE
 import os
-from directory_cache import DirectoryCache
 from loguru import logger
 from typing import List
 from lxml import html, etree
 from unidecode import unidecode
 import re
+
+from .directory_cache import DirectoryCache
 
 class ContentTable():
     """

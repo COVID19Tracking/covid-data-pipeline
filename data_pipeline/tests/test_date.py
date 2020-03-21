@@ -8,7 +8,7 @@ from datetime import datetime
 from dateutil import tz
 import pytz
 
-import udatetime
+from ..code.shared import udatetime
 
 def test_1():
 

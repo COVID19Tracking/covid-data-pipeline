@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 
 from requests.packages import urllib3
-import udatetime
+from . import udatetime
 
 urllib3.disable_warnings() 
 

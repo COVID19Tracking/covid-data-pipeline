@@ -4,12 +4,12 @@
 
 from loguru import logger
 
-from url_source import UrlSource, UrlSources
-from url_source_parsers import sources_config
-from url_source_validator import UrlSourceValidator
+from .url_source import UrlSource, UrlSources
+from .url_source_parsers import sources_config
+from .url_source_validator import UrlSourceValidator
 
-from directory_cache import DirectoryCache
-from change_list import ChangeList
+from .directory_cache import DirectoryCache
+from .change_list import ChangeList
 
 class UrlSourceManager():
 

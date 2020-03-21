@@ -49,8 +49,8 @@ parser.add_argument('--replace-most-recent-snapshot', action='store_true', defau
 _PUBLIC_STATE_URL = 'https://covidtracking.com/data/'
 _STATES_LARGER_WINDOWS = ['DE', 'IN', 'MA', 'NC', 'OK']
 
-from udatetime import now_as_utc
-from util import convert_python_to_json
+from .shared.udatetime import now_as_utc
+from .shared.util import convert_python_to_json
 import json
 
 class S3Log():
@@ -67,7 +67,7 @@ class S3Log():
 
     def save(self, path: str):
         convert_python_to_json(self.items)
-        json.dump(path)
+        json.dump(path, self.items)
 
 class S3Backup():
 
@@ -174,7 +174,7 @@ def main(args_list=None):
     else:
         log = S3Log()
 
-        for idx, r in state_info_df.iterrows():
+        for _, r in state_info_df.iterrows():
             # if idx > 1:
                 # break
             state = r["location"]

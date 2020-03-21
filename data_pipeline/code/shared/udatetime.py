@@ -113,7 +113,7 @@ def is_isoformated(s: str) -> False:
     " test if value is an iso-formatted string"
     if type(s) != str: return False
     #2020-03-13T06:17:50.204477
-    return re.match("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{6})?", s)
+    return re.match("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{6})?", s)
 
 def format_mins(x : float) -> str:
     if x < 60.0:

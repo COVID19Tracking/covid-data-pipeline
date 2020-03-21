@@ -16,12 +16,12 @@ import time
 from loguru import logger
 from typing import List, Dict, Tuple
 
-from data_pipeline import DataPipeline, DataPipelineConfig
-from specialized_capture import SpecializedCapture, special_cases
+from .data_pipeline import DataPipeline, DataPipelineConfig
+from .specialized_capture import SpecializedCapture, special_cases
 
-from util import get_host
-import udatetime
-import util_git
+from .shared.util import get_host
+from .shared import udatetime
+from .shared import util_git
 
 # ----------------------
 parser = ArgumentParser(

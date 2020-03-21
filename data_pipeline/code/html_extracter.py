@@ -5,12 +5,11 @@ from loguru import logger
 from typing import Tuple
 from datetime import datetime
 
-from change_list import ChangeItem
-from content_table import ContentTable
-from content_text import ContentText, make_content_text
-
-import udatetime
-import html_helpers
+from .change_list import ChangeItem
+from .content_table import ContentTable
+from .content_text import ContentText, make_content_text
+from .shared import udatetime
+from . import html_helpers
 
 class HtmlExtracter:
 

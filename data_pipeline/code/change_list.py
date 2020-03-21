@@ -5,11 +5,11 @@ from typing import Dict, Tuple, List
 from datetime import datetime
 from lxml import html
 
-from directory_cache import DirectoryCache
+from .directory_cache import DirectoryCache
 
-from util import convert_json_to_python, convert_python_to_json
-import udatetime
-import html_helpers
+from .shared.util import convert_json_to_python, convert_python_to_json
+from .shared import udatetime
+from . import html_helpers
 
 class ChangeItem:
     " status data about a link "

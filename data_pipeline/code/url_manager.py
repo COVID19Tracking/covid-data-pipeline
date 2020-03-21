@@ -4,12 +4,12 @@
 #   make sure we don't hit the same URL twice
 #
 
-from util import fetch_with_requests
 from typing import Tuple
 from loguru import logger
 import time
 
-from captive_browser import CaptiveBrowser
+from .shared.util import fetch_with_requests
+from .captive_browser import CaptiveBrowser
 
 class UrlManager:
 
