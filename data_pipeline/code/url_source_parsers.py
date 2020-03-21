@@ -2,7 +2,7 @@
 #
 # To add a new parser:
 #   1. implement a new parse routine.
-#   2. add a line to source_cofig
+#   2. add a line to sources_config
 #   3. run tests\test_sources to validate it.
 #
 # The parser routine needs to return data frame with colunmns:

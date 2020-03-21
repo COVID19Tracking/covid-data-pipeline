@@ -78,8 +78,9 @@ class DataPipeline():
     def get_capture(self) -> SpecializedCapture:
         if self._capture == None:
             publish_dir = os.path.join(self.config.base_dir, 'captive-browser')
+            driver = self.url_manager._captive.driver if self.url_manager._captive else None
             self._capture = SpecializedCapture(
-                self.config.temp_dir, publish_dir, self.url_manager._captive)
+                self.config.temp_dir, publish_dir, driver)
         return self._capture
 
     def shutdown_capture(self):
