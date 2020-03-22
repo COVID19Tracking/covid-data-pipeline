@@ -12,10 +12,11 @@ import time
 import boto3
 from loguru import logger
 
-from captive_browser import CaptiveBrowser
-from url_source import load_one_source
+from code.capture.captive_browser import CaptiveBrowser
+from code.sources.url_source import load_one_source
 
-
+from code.shared.util import read_config_file
+config = read_config_file()
 
 parser = ArgumentParser(
     description=__doc__,
@@ -23,12 +24,14 @@ parser = ArgumentParser(
 
 parser.add_argument(
     '--temp-dir',
-    default='/tmp/public-cache',
+    default=config["DIRS"]["test_dir"],
+    #default='/tmp/public-cache',
     help='Local temp dir for snapshots')
 
 parser.add_argument(
     '--s3-bucket',
-    default='covid-data-archive',
+    #default='covid-data-archive',
+    default=config["S3"]["bucket_name"],
     help='S3 bucket name')
 
 parser.add_argument('--states',
@@ -72,6 +75,7 @@ class S3Log():
 class S3Backup():
 
     def __init__(self, bucket_name: str):
+        # pylint: disable=no-member
         self.s3 = boto3.resource('s3')
         self.bucket_name = bucket_name
         self.bucket = self.s3.Bucket(self.bucket_name)
@@ -83,6 +87,7 @@ class S3Backup():
             ExtraArgs={'ContentType': 'image/png'})
 
     def delete_most_recent_snapshot(self, state: str):
+        # pylint: disable=no-member
         state_file_keys = [file.key for file in self.bucket.objects.all() if state in file.key]
         most_recent_state_key = sorted(state_file_keys, reverse=True)[0]
         self.s3.Object(self.bucket_name, most_recent_state_key).delete()

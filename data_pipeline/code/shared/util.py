@@ -4,11 +4,11 @@ import requests
 from loguru import logger
 import re
 from typing import Tuple, List, Dict, Callable
-import sys
 from datetime import datetime
-
 from requests.packages import urllib3
-from . import udatetime
+import configparser
+
+from code.shared import udatetime
 
 urllib3.disable_warnings() 
 
@@ -92,4 +92,14 @@ def get_host():
     return host
 
 # -----
+
+def read_config_file():
+    config = configparser.ConfigParser()
+    if os.path.exists("data_pipeline.local.ini"):
+        config.read('data_pipeline.local.ini')
+    elif os.path.exists("data_pipeline.ini"):
+        config.read('data_pipeline.ini')
+    else:
+        raise Exception("Missing data_pipeline.ini file")
+    return config
 
