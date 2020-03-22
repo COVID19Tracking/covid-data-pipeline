@@ -6,7 +6,7 @@ from lxml import html, etree
 from unidecode import unidecode
 import re
 
-from .directory_cache import DirectoryCache
+from code.shared.directory_cache import DirectoryCache
 
 class ContentTable():
     """

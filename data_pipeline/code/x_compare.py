@@ -8,7 +8,7 @@ import re
 from lxml import html, etree
 from unidecode import unidecode
 
-from .directory_cache import DirectoryCache
+from code.shared.directory_cache import DirectoryCache
 
 def remove_identical_nodes(elem1: html.Element, elem2: html.Element) -> bool:
     

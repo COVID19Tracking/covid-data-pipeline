@@ -5,8 +5,8 @@ from loguru import logger
 import pandas as pd
 import re
 
-from .url_source import UrlSource
-from .shared import udatetime
+from code.sources.url_source import UrlSource
+from code.shared import udatetime
 
 class UrlSourceValidator():
 

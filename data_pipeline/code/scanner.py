@@ -7,7 +7,6 @@ files are only updated if the cleaned version changes
 """
 
 from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
-import configparser
 
 import sys
 import os
@@ -16,12 +15,12 @@ import time
 from loguru import logger
 from typing import List, Dict, Tuple
 
-from .data_pipeline import DataPipeline, DataPipelineConfig
-from .specialized_capture import SpecializedCapture, special_cases
+from code.data_pipeline import DataPipeline, DataPipelineConfig
+from code.specialized_capture import SpecializedCapture, special_cases
 
-from .shared.util import get_host
-from .shared import udatetime
-from .shared import util_git
+from code.shared.util import get_host, read_config_file
+from code.shared import udatetime
+from code.shared import util_git
 
 # ----------------------
 parser = ArgumentParser(
@@ -58,14 +57,9 @@ parser.add_argument('--show_browser', dest='show_browser', action='store_true', 
     help='show browser while running')
 parser.add_argument('-i', '--image', dest='capture_image', action='store_true', default=False,
     help='capture image after each change')
+
 # data dir args
-config = configparser.ConfigParser()
-if os.path.exists("data_pipeline.local.ini"):
-    config.read('data_pipeline.local.ini')
-elif os.path.exists("data_pipeline.ini"):
-    config.read('data_pipeline.ini')
-else:
-    raise Exception("Missing data_pipeline.ini file")
+config = read_config_file()
 
 parser.add_argument(
     '--base_dir',

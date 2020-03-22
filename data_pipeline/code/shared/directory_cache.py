@@ -11,7 +11,7 @@ import pytz
 from typing import Union, List, Tuple, Dict
 #import subprocess
 
-from .shared import udatetime
+import udatetime
 
 class DirectoryCache:
     """  a simple disk-based page cache """
