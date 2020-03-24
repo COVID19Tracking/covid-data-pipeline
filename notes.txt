@@ -3,3 +3,7 @@ consider discovering gis links and auto extracting json.
   https://services1.arcgis.com/CY1LXxl9zlJeBuRZ/ArcGIS/rest/services/Florida_COVID19_Cases_by_County/FeatureServer/0/query?f=json&where=1%3D1&returnGeometry=false&outFields=*
 
 same for tableau
+
+import:
+
+http://python-notes.curiousefficiency.org/en/latest/python_concepts/import_traps.html

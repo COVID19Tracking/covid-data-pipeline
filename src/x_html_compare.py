@@ -4,7 +4,7 @@
 
 
 import re
-from code.shared.directory_cache import DirectoryCache
+from shared.directory_cache import DirectoryCache
 
 def clean_content(content: bytes) -> bytes:
 

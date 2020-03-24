@@ -12,10 +12,14 @@ import time
 import boto3
 from loguru import logger
 
-from code.capture.captive_browser import CaptiveBrowser
-from code.sources.url_source import load_one_source
+# change the the imports will work rather than failing mysteriously
+from __init__ import check_path
+check_path() 
 
-from code.shared.util import read_config_file
+from capture.captive_browser import CaptiveBrowser
+from sources.url_source import load_one_source
+
+from shared.util import read_config_file
 config = read_config_file()
 
 parser = ArgumentParser(

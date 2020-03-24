@@ -42,7 +42,7 @@ import json
 from lxml import html
 from loguru import logger
 
-from code.shared.google_sheet import GoogleSheet
+from shared.google_sheet import GoogleSheet
 
 def clean_google_url(s: str) -> str:
     "extract dest from a google query link"

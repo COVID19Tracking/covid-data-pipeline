@@ -15,23 +15,23 @@ from loguru import logger
 from typing import List, Dict, Tuple
 import pandas as pd
 
-from code.shared.directory_cache import DirectoryCache
-from code.transform.change_list import ChangeList
+from shared.directory_cache import DirectoryCache
+from transform.change_list import ChangeList
 
-from code.sources.url_manager import UrlManager
+from sources.url_manager import UrlManager
 
-from code.sources.url_source import UrlSource, UrlSources
-from code.sources.url_source_manager import UrlSourceManager
+from sources.url_source import UrlSource, UrlSources
+from sources.url_source_manager import UrlSourceManager
 
-from code.transform.html_formater import HtmlFormater
-from code.transform.html_cleaner import HtmlCleaner
-from code.transform.html_extracter import HtmlExtracter
+from transform.html_formater import HtmlFormater
+from transform.html_cleaner import HtmlCleaner
+from transform.html_extracter import HtmlExtracter
 
-from code.specialized_capture import SpecializedCapture
+from specialized_capture import SpecializedCapture
 
-from code.shared.util import is_bad_content, get_host
-from code.shared import util_git
-from code.shared import udatetime
+from shared.util import is_bad_content, get_host
+from shared import util_git
+from shared import udatetime
 
 class DataPipelineConfig():
 

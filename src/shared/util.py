@@ -8,12 +8,12 @@ from datetime import datetime
 from requests.packages import urllib3
 import configparser
 
-from code.shared import udatetime
+from shared import udatetime
 
 urllib3.disable_warnings() 
 
 def fetch_with_requests(page: str) -> [bytes, int]:
-    #print(f"fetch {page}")
+    " check data using requests "
     try:
         resp = requests.get(page, verify=False, timeout=30)
         return resp.content, resp.status_code
@@ -22,6 +22,7 @@ def fetch_with_requests(page: str) -> [bytes, int]:
         return None, 999
 
 def is_bad_content(content: bytes) -> [bool, str]:
+    " checks if content returned from requests looks bad "
 
     if content == None: return True, "Empty Response"
     if len(content) < 600: return True, f"Response is {len(content)} bytes"
@@ -31,6 +32,20 @@ def is_bad_content(content: bytes) -> [bool, str]:
 
 
 def convert_json_to_python(x):
+    """ convert a data collection from json compatible format 
+    
+    1. operates on data inplace
+    2. input should be a list or a dict
+    3. deals with parsing strings into dates.
+
+    Assumes all input dates that match the ISO standard are
+    UTC datetimes stored as strings in json and parses.
+
+    normal usage:
+        x = json.loads(s)
+        convert_json_to_python(x)
+
+    """
     if x is None:
         pass
     elif type(x) == str:
@@ -57,6 +72,21 @@ def convert_json_to_python(x):
     return x 
 
 def convert_python_to_json(x):
+    """ convert a data collection to a json compatible format 
+    
+    1. operates on data inplace
+    2. input should be a list or a dict
+    3. formats datetime as ISO string
+
+    Assumes all input datetimes are tz-aware UTC and formats
+    them as ISO strings.  Fails if you hand it a date as an
+    ISO string because it would be ambiguous when reloaded.
+
+    normal usage:
+        convert_python_to_json(x)
+        s = json.dumps(x)
+
+    """
     if x is None:
         pass
     elif type(x) == str:
@@ -82,24 +112,40 @@ def convert_python_to_json(x):
         raise Exception(f"unexpected type: {type(x)}")
     return x 
 
-
-
 # -----
 
 def get_host():
+    " get the name of the hosting computer "
     host = os.environ.get("HOST")
     if host == None: host = os.environ.get("COMPUTERNAME")
     return host
 
 # -----
 
-def read_config_file():
-    config = configparser.ConfigParser()
-    if os.path.exists("data_pipeline.local.ini"):
-        config.read('data_pipeline.local.ini')
-    elif os.path.exists("data_pipeline.ini"):
-        config.read('data_pipeline.ini')
-    else:
-        raise Exception("Missing data_pipeline.ini file")
-    return config
+def read_config_file() -> configparser.ConfigParser:
+    " read the ini file in the base repo dir"
 
+    ini_dir = os.path.join(os.path.dirname(__file__), "..", "..")
+    ini_dir = os.path.abspath(ini_dir)
+
+    config = configparser.ConfigParser()
+    for fn in ["data_pipeline.local.ini", "data_pipeline.ini"]:
+        p = os.path.join(ini_dir, fn)
+        if os.path.exists(p):
+            config.read(p)
+            return config
+
+    raise Exception(f"Missing data_pipeline.ini file in {ini_dir}")
+
+def find_executable(name: str) -> str:
+    " find an executable in current or parent directory or PATH"
+
+    path = os.environ.get("PATH")
+    dirs = path.split(";")
+
+    dirs.insert(0, ".")
+    dirs.insert(0, "..")
+    for d in dirs:
+        p = os.path.join(d, name)
+        if os.path.isfile(p): return p
+    return None

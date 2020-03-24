@@ -8,8 +8,8 @@ from typing import Tuple
 from loguru import logger
 import time
 
-from code.shared.util import fetch_with_requests
-from code.capture.captive_browser import CaptiveBrowser
+from shared.util import fetch_with_requests
+from capture.captive_browser import CaptiveBrowser
 
 class UrlManager:
 

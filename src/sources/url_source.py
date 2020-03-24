@@ -8,11 +8,11 @@ from loguru import logger
 import pandas as pd
 import io
 
-from code.shared.util import fetch_with_requests
-from code.shared import udatetime
-from code.shared.directory_cache import DirectoryCache
-from code.transform.change_list import ChangeList
-from code.sources.url_source_parsers import sources_config
+from shared.util import fetch_with_requests
+from shared import udatetime
+from shared.directory_cache import DirectoryCache
+from transform.change_list import ChangeList
+from sources.url_source_parsers import sources_config
 
 
 # ------------------------------------

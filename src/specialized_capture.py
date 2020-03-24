@@ -8,12 +8,16 @@ import shutil
 from loguru import logger
 import atexit
 
-from code.capture.captive_browser import CaptiveBrowser, are_images_same
-from code.shared.directory_cache import DirectoryCache
+# change the the imports will work rather than failing mysteriously
+from __init__ import check_path
+check_path() 
 
-from code.shared.util import get_host
-from code.shared import util_git
-from code.shared import udatetime
+from capture.captive_browser import CaptiveBrowser, are_images_same
+from shared.directory_cache import DirectoryCache
+
+from shared.util import get_host
+from shared import util_git
+from shared import udatetime
 
 class SpecializedCapture():
 

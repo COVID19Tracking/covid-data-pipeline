@@ -12,6 +12,8 @@ import os
 import tempfile
 import numpy as np
 
+from shared.util import find_executable
+
 def are_images_same(buffer1: bytes, buffer2: bytes) -> Tuple[bool, bytes]:
 
     if buffer1.shape != buffer2.shape:
@@ -45,12 +47,21 @@ class CaptiveBrowser:
         # use FireFox by default. Chrome is jittery
         if browser == "firefox":
             options = webdriver.FirefoxOptions()
-            if headless: options.add_argument('--headless')
-            self.driver = webdriver.Firefox(options=options)
+            if headless: options.add_argument("--headless")
+
+            exe_path = find_executable("geckodriver.exe")
+            if exe_path == None: 
+                logger.error("Cannot find geckodriver.exe, please download")
+                exit(-1)
+            self.driver = webdriver.Firefox(options=options, executable_path=exe_path)
         elif browser == "chrome":
             options = webdriver.ChromeOptions()
-            if headless: options.add_argument('headless')
-            self.driver = webdriver.Chrome(options=options)
+            if headless: options.add_argument("headless")
+            exe_path = find_executable("chromedriver.exe")
+            if exe_path == None: 
+                logger.error("Cannot find chromedriver.exe, please download")
+                exit(-1)
+            self.driver = webdriver.Chrome(options=options, executable_path=exe_path)
         else:
             raise Exception(f"Unknown browser: {browser}")
 

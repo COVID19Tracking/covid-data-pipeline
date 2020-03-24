@@ -3,9 +3,9 @@
 #
 from loguru import logger
 
-from ..code.directory_cache import DirectoryCache
-from ..code.url_source import UrlSource
-from ..code.url_source_manager import UrlSourceManager
+from code.directory_cache import DirectoryCache
+from code.url_source import UrlSource
+from code.url_source_manager import UrlSourceManager
 
 def test_load():
 

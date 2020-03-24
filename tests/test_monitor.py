@@ -5,7 +5,7 @@ import subprocess
 import time
 import sys
 
-from ..code.shared.util_git import monitor_start, monitor_check
+from code.shared.util_git import monitor_start, monitor_check
 
 def test_monitor():
 

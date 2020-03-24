@@ -4,7 +4,7 @@
 import sys
 import os
 
-from ..code.html_cleaner import HtmlCleaner
+from code.html_cleaner import HtmlCleaner
 
 def try_one(s_in: str):
     cleaner = HtmlCleaner(trace=True)

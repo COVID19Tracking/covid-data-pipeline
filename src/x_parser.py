@@ -8,9 +8,9 @@ from unidecode import unidecode
 import re
 from copy import deepcopy
 
-from code.shared.directory_cache import DirectoryCache
-from code.transform.content_table import ContentTable
-from code.transform.change_list import ChangeList
+from shared.directory_cache import DirectoryCache
+from transform.content_table import ContentTable
+from transform.change_list import ChangeList
 
 class PageParser():
 
