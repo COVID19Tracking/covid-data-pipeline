@@ -6,9 +6,9 @@ from loguru import logger
 from src import check_path
 check_path()
 
-from src.shared.directory_cache import DirectoryCache
-from src.sources.url_source import UrlSource
-from src.sources.url_source_manager import UrlSourceManager
+from shared.directory_cache import DirectoryCache
+from sources.url_source import UrlSource
+from sources.url_source_manager import UrlSourceManager
 
 def test_load():
 

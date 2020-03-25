@@ -7,7 +7,7 @@ import os
 from src import check_path
 check_path()
 
-from src.shared.util_git import pull, push, isbehind
+from shared.util_git import pull, push, isbehind
 
 def test_status():
 

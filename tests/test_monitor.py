@@ -8,7 +8,7 @@ import sys
 from src import check_path
 check_path()
 
-from src.shared.util_git import monitor_start, monitor_check
+from shared.util_git import monitor_start, monitor_check
 
 def test_monitor():
 
