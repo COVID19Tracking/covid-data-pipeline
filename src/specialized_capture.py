@@ -88,7 +88,7 @@ class SpecializedCapture():
         time.sleep(5)
 
         logger.info(f"    3. save screenshot to {xpath}")
-        buffer_new = browser.screenshot(xpath_temp)        
+        buffer_new = browser.screenshot(xpath_temp, full_page=True)        
         if buffer_new is None:
             logger.error("      *** could not capture image")
             return

@@ -108,7 +108,7 @@ def screenshot_to_path(data_url, path, browser):
     time.sleep(5)
 
     logger.info(f"    3. save screenshot to {path}")
-    browser.screenshot(path)
+    browser.screenshot(path, full_page=True)
 
 
 def screenshot(state, data_url, args, s3, browser):

@@ -5,11 +5,9 @@ from capture.captive_browser import CaptiveBrowser
 
 def test_auto_resize():
 
-    browser = CaptiveBrowser(headless=False, browser="firefox", full_page=True)
+    browser = CaptiveBrowser(headless=False, browser="firefox")
     browser.navigate("https://coronavirus.dc.gov/page/coronavirus-data")
-    browser.expand_to_full_page()
-    browser.screenshot("c:\\temp\\test.png")
-    browser.restore_to_original_size()
+    browser.screenshot("c:\\temp\\test.png", full_page=True)
 
 if __name__ == "__main__":
     test_auto_resize()

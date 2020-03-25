@@ -33,7 +33,11 @@ def are_images_same(buffer1: bytes, buffer2: bytes) -> Tuple[bool, bytes]:
 
 class CaptiveBrowser:
 
-    def __init__(self, headless: bool = True, browser = "firefox"):
+    def __init__(self, headless = True, browser = "firefox", full_page = True):
+
+        self.headless = headless
+        self.browser = browser
+        self.full_page = full_page
 
         self.current_url = None
 
@@ -86,6 +90,23 @@ class CaptiveBrowser:
         if len(xobjects) > 0: return True        
         return False
 
+    def set_size(self, width: int, height: int):
+        self.driver.set_window_size(width, height)
+
+    def get_document_size(self) -> Tuple[int, int]:
+        xbody = self.driver.find_element_by_tag_name("body")
+        sz = xbody.size
+        return sz["width"], sz["height"]
+
+    def expand_to_full_page(self):
+        sz = self.get_document_size()
+        self.set_size(sz[0], sz[1])
+
+    def restore_to_original_size(self):
+        self.driver.set_window_size(1366, 2400)
+
+
+
     def has_gis_link(self) -> bool:
         #https://alpublichealth.maps.arcgis.com/apps/opsdashboard/index.html#/6d2771faa9da4a2786a509d82c8cf0f7
         xobjects = self.driver.find_elements(By.XPATH, "//a[contains(@href,'.arcgis.com']")        
@@ -115,7 +136,7 @@ class CaptiveBrowser:
 #            logger.error(f"post to cache at {url} failed status={resp.status_code}")
 #        return url
 
-    def screenshot(self, xpath: str = None, wait_secs: int = 5, max_retry = 4) -> bytes:
+    def screenshot(self, xpath: str = None, wait_secs: int = 5, max_retry = 4, full_page = False) -> bytes:
         """
         take a screen shot and return the bytes
 
@@ -133,7 +154,9 @@ class CaptiveBrowser:
 
         for retry in range(max_retry):
 
+            self.expand_to_full_page()
             self.driver.save_screenshot(xto)
+            self.restore_to_original_size()
             
             if os.path.exists(xto) and os.path.getsize(xto) > 25000: break
 
