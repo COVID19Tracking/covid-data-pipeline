@@ -26,6 +26,7 @@ from sources.url_source_manager import UrlSourceManager
 from transform.html_formater import HtmlFormater
 from transform.html_cleaner import HtmlCleaner
 from transform.html_extracter import HtmlExtracter
+from transform.html_converter import HtmlConverter
 
 from specialized_capture import SpecializedCapture
 
@@ -67,6 +68,8 @@ class DataPipeline():
         self.cache_raw = DirectoryCache(os.path.join(base_dir, "raw")) 
         self.cache_clean = DirectoryCache(os.path.join(base_dir, "clean")) 
         self.cache_extract = DirectoryCache(os.path.join(base_dir, "extract")) 
+        self.cache_convert = DirectoryCache(os.path.join(base_dir, "convert")) 
+
         self.cache_diff = DirectoryCache(os.path.join(base_dir, "diff")) 
 
         self.url_manager = UrlManager(config.headless, config.browser)
@@ -166,6 +169,7 @@ class DataPipeline():
         for key in self.cache_clean.list_html_files():
             if key == "index.html": continue
             if key == "google_sheet.html": continue
+
             if rerun or not self.cache_extract.exists(key):
                 if is_first:
                     logger.info(f"extract existing files...")
@@ -181,6 +185,34 @@ class DataPipeline():
                 extracter = HtmlExtracter()
                 local_extract_content = extracter.extract(local_clean_content, item)
                 self.cache_extract.write(key, local_extract_content)
+
+    def convert_to_json(self, rerun=False):
+        " get json data out of extracted html "
+
+        self.change_list = ChangeList(self.cache_raw)                
+        self.change_list.load()
+
+        is_first = False
+        for key in self.cache_extract.list_html_files():
+            if key == "index.html": continue
+            if key == "google_sheet.html": continue
+
+            xkey = key.replace(".html", ".json")
+            if rerun or not self.cache_convert.exists(xkey):
+                if is_first:
+                    logger.info(f"convert existing files...")
+                    is_first = False
+                logger.info(f"  convert {key}")
+                local_extract_content =  self.cache_extract.read(key)
+
+                item = self.change_list.get_item(key)
+                if item == None:
+                    logger.warning("   skip because it is a new item")
+                    continue
+
+                converter = HtmlConverter()
+                local_convert_content = converter.convert(key, local_extract_content, item)
+                self.cache_convert.write(xkey, local_convert_content)
 
     def _main_loop(self, source: UrlSource, change_list: ChangeList) -> Dict[str, str]:
 
@@ -253,6 +285,10 @@ class DataPipeline():
                 extracter = HtmlExtracter()
                 remote_extract_content = extracter.extract(remote_clean_content, item)
                 self.cache_extract.write(key, remote_extract_content)
+
+                converter = HtmlConverter()
+                remote_convert_content = converter.convert(key, remote_extract_content, item)
+                self.cache_convert.write(key, remote_convert_content)
 
 
                 if self.config.capture_image:

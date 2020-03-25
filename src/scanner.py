@@ -43,6 +43,9 @@ def load_args(config):
     parser.add_argument(
         '-x', '--extract', dest='extract_html', action='store_true', default=False,
         help='run the html extractor (only)')
+    parser.add_argument(
+        '-j', '--json', dest='convert_to_json', action='store_true', default=False,
+        help='run the html-to-json converter (only)')
 
     parser.add_argument('--trace', dest='trace', action='store_true', default=False,
         help='turn on tracing')
@@ -223,10 +226,11 @@ def main(args_list=None):
     scanner = DataPipeline(config)
     capture = init_specialized_capture(args)
 
-    if args.clean_html or args.extract_html or args.format_html:
+    if args.clean_html or args.extract_html or args.format_html or args.convert_to_json:
         if args.format_html: scanner.format_html(rerun=True)
         if args.clean_html: scanner.clean_html(rerun=True)
         if args.extract_html: scanner.extract_html(rerun=True)
+        if args.convert_to_json: scanner.convert_to_json(rerun=True)
     elif args.continuous:
         scanner.format_html()
         scanner.clean_html()

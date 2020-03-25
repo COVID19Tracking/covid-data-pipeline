@@ -59,11 +59,21 @@ class HtmlExtracter:
         if href == None: return None
         if href.startswith("#"): return None
 
+
         text = self.extract_text(elem)
 
         item = "unknown"
         if elem.tag == "a": 
             item = "link"
+
+            # ignore lots of links
+            if href.startswith("."): return None
+            if href.startswith("/"): return None
+            if href.startswith("tel:"): return None
+            if "twitter.com" in href: return None
+            if "facebook.com" in href: return None
+            if "youtube.com" in href: return None
+
         elif elem.tag == "iframe": 
             item = "frame"
 

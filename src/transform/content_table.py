@@ -33,7 +33,7 @@ class ContentTable():
         " simple test if a table contains anything that looks like data "
         for r in self.rows:
             for c in r:
-                if re.search("^[ 0-9,]+$", c): return True
+                if re.search("^[ 0-9,]+", c): return True
                 if re.search(":[ 0-9,]+,", c): return True
         return False
 
