@@ -1,14 +1,14 @@
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('..'))
+from src import check_path
+check_path()
 
 from datetime import datetime
 from dateutil import tz
 import pytz
 
-from code.shared import udatetime
+from src.shared import udatetime
 
 def test_1():
 
