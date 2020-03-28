@@ -17,7 +17,7 @@ from shared.util import find_executable
 def are_images_same(buffer1: bytes, buffer2: bytes) -> Tuple[bool, bytes]:
 
     if buffer1.shape != buffer2.shape:
-        return False
+        return False, None
 
     diff = buffer1 - buffer2
     xmin, xmax = diff.min(), diff.max()

@@ -105,7 +105,8 @@ class SpecializedCapture():
                 if os.path.exists(xpath_prev): os.remove(xpath_prev)
                 if os.path.exists(xpath): os.rename(xpath, xpath_prev)
                 os.rename(xpath_temp, xpath)
-                imageio.imwrite(xpath_diff, buffer_diff, format="png")
+                if not buffer_diff is None:
+                    imageio.imwrite(xpath_diff, buffer_diff, format="png")
         else:
             logger.warning("      image is new")
             os.rename(xpath_temp, xpath)
