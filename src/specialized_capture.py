@@ -141,21 +141,21 @@ class SpecializedCapture():
 
 def special_cases(capture: SpecializedCapture):
 
-    capture.screenshot("az_tableau", "Arizona Main Page",
-        "https://www.azdhs.gov/preparedness/epidemiology-disease-control/infectious-disease-epidemiology/index.php#novel-coronavirus-home"
-    )
+    #capture.screenshot("az_tableau", "Arizona Main Page",
+    #    "https://www.azdhs.gov/preparedness/epidemiology-disease-control/infectious-disease-epidemiology/index.php#novel-coronavirus-home"
+    #)
 
     # IA has a recaptua
     #capture.screenshot("ia_data", "Arizona Data Page",
     #    "https://idph.iowa.gov/Emerging-Health-Issues/Novel-Coronavirus"
     #)
 
-    capture.screenshot("wy_data", "Wyoming Data Page",
-        "https://health.wyo.gov/publichealth/infectious-disease-epidemiology-unit/disease/novel-coronavirus/"
-    )
+    #capture.screenshot("wy_data", "Wyoming Data Page",
+    #    "https://health.wyo.gov/publichealth/infectious-disease-epidemiology-unit/disease/novel-coronavirus/"
+    #)
 
-    capture.screenshot("va_tableau", "Virginia Tableau Page",
-        "https://public.tableau.com/views/VirginiaCOVID-19Dashboard/VirginiaCOVID-19Dashboard?:embed=yes&:display_count=yes&:showVizHome=no&:toolbar=no"    )
+    #capture.screenshot("va_tableau", "Virginia Tableau Page",
+    #    "https://public.tableau.com/views/VirginiaCOVID-19Dashboard/VirginiaCOVID-19Dashboard?:embed=yes&:display_count=yes&:showVizHome=no&:toolbar=no"    )
 
     # screenshot is noisy
     #capture.screenshot("mo_power_bi", "Missouri Power BI",
