@@ -161,7 +161,7 @@ def special_cases(capture: SpecializedCapture):
     #capture.screenshot("mo_power_bi", "Missouri Power BI",
     #    "https://health.mo.gov/living/healthcondiseases/communicable/novel-coronavirus/"
     #)
-
+    pass
 
 if __name__ == "__main__":
     temp_dir = "c:\\temp\\public-cache"

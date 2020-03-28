@@ -57,6 +57,9 @@ class DataPipelineConfig():
 
     def is_target_state(self, location: str) -> bool:
         if self.states == None: return True
+
+        location = location.replace("_data", "")
+
         return location in self.states
 
 class DataPipeline():
@@ -93,6 +96,9 @@ class DataPipeline():
         return self._capture
 
     def shutdown_capture(self):
+
+        self.url_manager.shutdown()
+
         if self._capture != None:
             self._capture.close()
             if self.config.auto_push:
