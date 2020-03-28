@@ -132,6 +132,7 @@ state_abrrevs = {
   "Washington DC": "DC",
   "Commonwealth of the Northern Mariana Islands": "MP",
   "Guam": "GU",
+  "American Samoa": "AS",
   "Puerto Rico": "PR",
   "Virgin Islands": "VI"
 }
@@ -329,7 +330,7 @@ sources_config = [
         "endpoint": "http://blog.lazd.net/coronadatascraper/data.json",
         "parser": parse_cds, 
         "content_type": "json",
-        "action": "enabled",
+        "action": "disabled",
         "display_dups": False
     },
     { 
@@ -341,6 +342,12 @@ sources_config = [
         "action": "test",
         "display_dups": False
     }
+
+    # from https://github.com/ExpDev07/coronavirus-tracker-api/blob/master/README.md
+    #jhu - https://github.com/CSSEGISandData/COVID-19 - Worldwide Data repository operated by the Johns Hopkins University Center for Systems Science and Engineering (JHU CSSE).
+    #csbs - https://www.csbs.org/information-covid-19-coronavirus - U.S. County data that comes from the Conference of State Bank Supervisors.
+
+
 ]
 
 
