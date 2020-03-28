@@ -113,7 +113,7 @@ def do_specialized_capture(capture: SpecializedCapture):
     try:
         special_cases(capture)
     except Exception as ex:
-        logger.error(ex)
+        logger.exception(ex)
         logger.error("*** continue after exception in specialized capture")
 
 

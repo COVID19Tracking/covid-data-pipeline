@@ -47,10 +47,9 @@ class HtmlConverter:
 
         tables = doc.findall(".//table")        
         if len(tables) > 0:
-            logger.warning(f"found tables for {location}") 
-            for t in tables:
-                logger.info(f"  table ===>\n{html.tostring(t, pretty_print=True)}<===\n")
-            exit(-1)
+            #logger.warning(f"found tables for {location}") 
+            #for t in tables:
+            #    logger.info(f"  table ===>\n{html.tostring(t, pretty_print=True)}<===\n")
             return { "error": "found tables w/o parser", "at": udatetime.now_as_utc() }
         else: 
             return { "error": "no tables", "at": udatetime.now_as_utc() }

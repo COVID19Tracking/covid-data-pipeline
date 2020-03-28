@@ -35,7 +35,7 @@ class HtmlCleaner:
                 xid2 = re.sub("^[0-9a-fA-F]+-(.*)",  "\\1", xid) 
                 xid2 = re.sub("(.*)-[a-z]?[0-9a-fA-F]+$",  "\\1", xid2) 
                 if xid != xid2: 
-                    logger.debug("special case: hex data in id")
+                    #logger.debug("special case: hex data in id")
                     elem.attrib["id"] = xid2
 
             if elem.attrib.get("fb-xfbml-state"):

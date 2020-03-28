@@ -46,6 +46,7 @@ class HtmlFormater():
 
     def format(self, xurl: str, content: bytes) -> bytes:
         tree = html.fromstring(content)
-        self._inject_extra_elements(tree, xurl)
+        if xurl != None:
+            self._inject_extra_elements(tree, xurl)
         self._indent_elem(tree, 1)        
         return html.tostring(tree)
