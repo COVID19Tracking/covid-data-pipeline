@@ -34,6 +34,9 @@ def load_args(config):
         description=__doc__,
         formatter_class=RawDescriptionHelpFormatter)
 
+    parser.add_argument('state', metavar='state', type=str, nargs='*',
+        help='state to run (default any not checked in last 15 mins)')
+
     parser.add_argument(
         '-f', '--format', dest='format_html', action='store_true', default=False,
         help='run the html formater (only)')
@@ -211,10 +214,15 @@ def main(args_list=None):
     if not args.auto_push:
         logger.warning("github push is DISABLED")
 
+    # refetch now if specific states requested
+    if len(args.state) > 0:
+        args.rerun_now = True
+
+
     # firefox is now the default
     if args.use_requests or args.use_chrome: args.use_firefox = False
 
-    config = DataPipelineConfig(args.base_dir, args.temp_dir, flags = {
+    config = DataPipelineConfig(args.base_dir, args.temp_dir, args.state, flags = {
         "trace": args.trace,
         "capture_image": args.capture_image,
         "rerun_now": args.rerun_now,

@@ -165,7 +165,7 @@ class ContentTable():
             if y.tag == etree.Comment: continue
             if y.tag in ["script", "noscript", "br", "hr", "input", "button", "svg", "img", "form"]: continue
 
-            if y.tag in ["span", "div", "h3", "h2", "h1", "small", "strong", "em", "sup", "i", 
+            if y.tag in ["span", "div", "h4", "h3", "h2", "h1", "small", "strong", "em", "sup", "i", 
                 "a", "b", "u", "p", "ul", "label", "sub"]:
                 elem_ch, s = self._extract_any(y)
                 if elem_ch != None:

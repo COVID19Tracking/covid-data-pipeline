@@ -36,7 +36,7 @@ from shared import udatetime
 
 class DataPipelineConfig():
 
-    def __init__(self, base_dir: str, temp_dir: str, flags : Dict):
+    def __init__(self, base_dir: str, temp_dir: str, states: List[str], flags : Dict):
 
         self.base_dir = base_dir
         self.temp_dir = temp_dir
@@ -46,12 +46,18 @@ class DataPipelineConfig():
 
         self.headless = flags["headless"]
 
+        self.states = states if len(states) > 0 else None
+
         if flags.get("firefox"):
             self.browser = "firefox"
         elif flags.get("chrome"):
             self.browser = "chrome"
         else:
             self.browser = "requests"
+
+    def is_target_state(self, location: str) -> bool:
+        if self.states == None: return True
+        return location in self.states
 
 class DataPipeline():
 
@@ -312,6 +318,9 @@ class DataPipeline():
 
         for idx, r in df_config.iterrows():
             location = r["location"]
+
+            if not self.config.is_target_state(location): continue
+
             source = r["source_name"]
             general_url = r["main_page"]
             data_url = r["data_page"]
